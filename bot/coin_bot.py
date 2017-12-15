@@ -58,7 +58,7 @@ def process_price_step(message):
         chat_id = message.chat.id
         price = message.text
         if not price.isdigit():
-            msg = bot.reply_to(message, 'Price should be a number')
+            msg = bot.reply_to(message, 'Цена должна быть числом')
             bot.register_next_step_handler(msg, process_price_step)
             return
         product = product_dict[chat_id]
@@ -74,7 +74,7 @@ def process_percent_step(message):
         chat_id = message.chat.id
         percent = message.text
         if not percent.isdigit():
-            msg = bot.reply_to(message, 'Percent should be a number')
+            msg = bot.reply_to(message, 'Процент должен быть числом')
             bot.register_next_step_handler(msg, process_percent_step)
             return
         product = product_dict[chat_id]
