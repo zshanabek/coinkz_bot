@@ -14,6 +14,12 @@ client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.c
 coin_names = ['NEO','NEM','Stratis','BitShares','Ethereum','Stellar','Ripple','Dash','Lisk','Litecoin','Waves','Ethereum Classic','Monero','Bitcoin','ZCash'] 
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
+main_buttons = [
+            'Купить',
+            'Продать',
+            'Найти по названию валюты',
+            'Найти по цене валюты'
+            ]
 class Product:
     def __init__(self, name):
         self.name = name
@@ -25,13 +31,7 @@ class Product:
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     welcome_msg = "Здравствуйте, {0}. Что вы хотите сделать?".format(message.chat.first_name)
-    buttons = [
-            'Купить',
-            'Продать',
-            'Найти по названию валюты',
-            'Найти по цене валюты'
-            ]
-    bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(buttons, 1))
+    bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(main_buttons, 1))
 
 
 @bot.message_handler(content_types=['text'])
@@ -178,7 +178,7 @@ def process_city_step(message):
             product.city = city
         else:
             raise Exception()    
-        bot.send_message(chat_id, 'Вы хотите продать ' + product.name + '\nЦена: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent + '\nГород: ' + product.city)
+        bot.send_message(chat_id, 'Вы хотите продать: ' + product.name + '\nЦена: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent + '\nГород: ' + product.city, reply_markup = create_keyboard(main_buttons,1))
         sell.insert_one({
             'name': product.name,
             'price': int(product.price),
