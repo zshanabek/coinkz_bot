@@ -10,8 +10,6 @@ product_dict = {}
 from pymongo import MongoClient
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
-db = client.fuckingtelegrambot
-sell = db.sell
 # db.sell.delete_many({})
 
 class Product:
@@ -37,31 +35,13 @@ def send_welcome(message):
 @bot.message_handler(content_types=['text'])
 def handle_message(message):
     if message.text == 'Продать':
-        if (message.chat.username == None):
-            bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
-        else:
-            msg = bot.send_message(message.chat.id, """\
-                    Хорошо. Cперва, введите имя валюты.
-                    """)
-            bot.register_next_step_handler(msg, process_name_step)
+        sell_coin(message)
     elif message.text=='Купить':
-        a = ""
-        for i in sell.find():
-            a += 'Название валюты: {}\n'.format(i['name'])
-            a += 'Цена: $'+'{}\n'.format(i['price'])
-            a += 'Процент: {}\n'.format(i['percent'])
-            a += 'Город: {}\n'.format(i['city'])
-            if(i['username']!=None):
-                a += 'Владелец: @{}\n\n'.format(i['username'])     
-            else:
-                a += 'Владелец: Не указан'  
-        bot.send_message(message.chat.id, a)
+        buy(message)
     elif message.text=='Найти по названию валюты':
-        msg = bot.send_message(message.chat.id, "Введите название валюты")
-        bot.register_next_step_handler(msg, process_find)
+        find_coins(message)
     elif message.text=='Найти по цене валюты':
-        msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом. Например: 2000 5000")
-        bot.register_next_step_handler(msg, process_find_price)
+        find_price_coins(message)
 
 @bot.message_handler(commands=['find'])
 def find_coins(message):
@@ -111,17 +91,18 @@ def process_find_price(message):
     #     bot.reply_to(message, 'oooops')
 
 @bot.message_handler(commands=['sell'])
-def sell(message):
-    if (message.chat.username == None):
-        bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
-    else:
-        msg = bot.send_message(message.chat.id, """\
-                Хорошо. Cперва, введите имя валюты.
-                """)
-        bot.register_next_step_handler(msg, process_name_step)
+def sell_coin(message):
+    if message.text == 'Продать':
+        if (message.chat.username == None):
+            bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
+        else:
+            msg = bot.send_message(message.chat.id, """\
+                    Хорошо. Cперва, введите имя валюты.
+                    """)
+            bot.register_next_step_handler(msg, process_name_step)
 
 @bot.message_handler(commands=['buy'])
-def bye(message):     
+def buy(message):     
     a = ""
     for i in sell.find():
         a += 'Название валюты: {}\n'.format(i['name'])
@@ -204,4 +185,6 @@ def create_keyboard(words=None, width=None):
             keyboard.add(types.KeyboardButton(text=word))
         return keyboard
 if __name__ == '__main__':
-     bot.polling(none_stop=True)
+    db = client.fuckingtelegrambot
+    sell = db.sell
+    bot.polling(none_stop=True)
