@@ -6,7 +6,7 @@ bot = telebot.TeleBot(config.token)
 product_dict = {}
 
 from pymongo import MongoClient
-client = MongoClient('localhost', 27017)
+client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
 db = client.fuckingtelegrambot
 
