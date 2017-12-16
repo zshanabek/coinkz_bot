@@ -2,10 +2,11 @@ import config
 import time
 import telebot
 from telebot import types
+from db import Data
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 
-
+data = Data()
 class Product:
     def __init__(self, name):
         self.name = name
@@ -91,7 +92,7 @@ def process_city_step(message):
         product = product_dict[chat_id]
         product.city = city        
         bot.send_message(chat_id, 'Хорошо. Ваш зовут ' + product.name + '\n Цена товара: ' + str(product.price) + '\n Процент: ' + product.percent + '\n Город: ' + product.city)
-
+        data.insert_vendor(price, percent, name, city)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 if __name__ == '__main__':
