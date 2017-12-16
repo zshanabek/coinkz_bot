@@ -60,16 +60,15 @@ def find_price_coins(message):
 def process_find(message):
     try:
         coin_name = message.text  
+        b = 1
         a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"name": coin_name}).count())
-        for i in sell.find({"name": coin_name}):
-            a += 'Название валюты: {}\n'.format(i['name'])
+        for i in sell.find({"name": coin_name}).limit(10):
+            a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
             a += 'Город: {}\n'.format(i['city'])
-            if(i['username']!=None):
-                a += 'Владелец: @{}\n\n'.format(i['username'])     
-            else:
-                a += 'Владелец: Не указан'  
+            a += 'Владелец: @{}\n\n'.format(i['username'])
+            b+=1
         bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -80,16 +79,15 @@ def process_find_price(message):
         p = price.split(" ")
         n1 = int(p[0])
         n2 = int(p[1])
+        b = 1
         a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"price": {"$gte": n1, "$lte": n2}}).count())
-        for i in sell.find({"price": {"$gte": n1, "$lte": n2}}):
-            a += 'Название валюты: {}\n'.format(i['name'])
+        for i in sell.find({"price": {"$gte": n1, "$lte": n2}}).limit(10):
+            a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
             a += 'Город: {}\n'.format(i['city'])
-            if(i['username']!=None):
-                a += 'Владелец: @{}\n\n'.format(i['username'])     
-            else:
-                a += 'Владелец: Не указан'  
+            a += 'Владелец: @{}\n\n'.format(i['username'])   
+            b+=1  
         bot.send_message(message.chat.id, a)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -108,15 +106,14 @@ def sell_coin(message):
 @bot.message_handler(commands=['buy'])
 def buy(message):     
     a = ""
-    for i in sell.find():
-        a += 'Название валюты: {}\n'.format(i['name'])
+    b = 1
+    for i in sell.find().limit(10):
+        a += '{0}. Название валюты: {1}\n'.format(b,i['name'])
         a += 'Цена: $'+'{}\n'.format(i['price'])
         a += 'Процент: {}\n'.format(i['percent'])
         a += 'Город: {}\n'.format(i['city'])
-        if(i['username']!=None):
-            a += 'Владелец: @{}\n\n'.format(i['username'])     
-        else:
-            a += 'Владелец: Не указан'  
+        a += 'Владелец: @{}\n\n'.format(i['username'])     
+        b+=1
     bot.send_message(message.chat.id, a)
 
 
