@@ -2,6 +2,8 @@ import config
 import time
 import telebot
 from telebot import types
+import pprint
+import pdb
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 
@@ -20,7 +22,6 @@ class Product:
         self.amount = None
         self.percent = None
         self.city = None
-        self.username = None            
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -31,17 +32,61 @@ def send_welcome(message):
     keyboard.add(callback_bt1, callback_bt2)
     bot.send_message(message.chat.id, welcome_msg,reply_markup=keyboard)
 
+@bot.message_handler(commands=['find'])
+def find_coins(message):
+    msg = bot.send_message(message.chat.id, "Введите название валюты")
+    bot.register_next_step_handler(msg, process_find)
+
+@bot.message_handler(commands=['find_price'])
+def find_coins(message):
+    msg = bot.send_message(message.chat.id, "Введите цену")
+    bot.register_next_step_handler(msg, process_find_price)
+
+def process_find_price(message):
+    try:
+        price = message.text  
+        a = ""
+        for i in sell.find({"price": {"$lt": price}}):
+            a += 'Название валюты: {}\n'.format(i['name'])
+            a += 'Цена: $'+'{}\n'.format(i['price'])
+            a += 'Процент: {}\n'.format(i['percent'])
+            a += 'Город: {}\n'.format(i['city'])
+            if(i['username']!=None):
+                a += 'Владелец: @{}\n\n'.format(i['username'])     
+            else:
+                a += 'Владелец: Не указан'  
+        bot.send_message(message.chat.id, a)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
+
+def process_find(message):
+    try:
+        coin_name = message.text  
+        a = 'Найдено {0} продавцa(oв)\n'.format(sell.find({"name": coin_name}).count())
+        for i in sell.find({"name": coin_name}):
+            a += 'Название валюты: {}\n'.format(i['name'])
+            a += 'Цена: $'+'{}\n'.format(i['price'])
+            a += 'Процент: {}\n'.format(i['percent'])
+            a += 'Город: {}\n'.format(i['city'])
+            if(i['username']!=None):
+                a += 'Владелец: @{}\n\n'.format(i['username'])     
+            else:
+                a += 'Владелец: Не указан'  
+        bot.send_message(message.chat.id, a)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
+
 @bot.callback_query_handler(func=lambda c: True)
 def inline(c):
     if c.data=='2':
-        msg = bot.reply_to(c.message, """\
-                    Хорошо. Cперва, введите имя товара.
+        msg = bot.send_message(c.message.chat.id, """\
+                    Хорошо. Cперва, введите имя валюты.
                     """)
         bot.register_next_step_handler(msg, process_name_step)
     elif c.data=='1':
         a = ""
         for i in sell.find():
-            a += 'Название монеты: {}\n'.format(i['name'])
+            a += 'Название валюты: {}\n'.format(i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
             a += 'Город: {}\n'.format(i['city'])
@@ -55,10 +100,6 @@ def inline(c):
 @bot.message_handler(commands=['help'])
 def send_welcome(message):
 	bot.reply_to(message, "Введите команду /start для начала торговли")
-
-@bot.message_handler(content_types=["text"])
-def repeat_all_messages(message):
-    bot.send_message(message.chat.id, message.text)
 
 def process_name_step(message):
     try:
@@ -108,7 +149,7 @@ def process_city_step(message):
         city = message.text
         product = product_dict[chat_id]
         product.city = city        
-        bot.send_message(chat_id, 'Хорошо. Вы хотите продать ' + product.name + '\n Цена: ' + '$'+str(product.price) + '\n Процент: ' + product.percent + '\n Город: ' + product.city)
+        bot.send_message(chat_id, 'Вы хотите продать ' + product.name + '\nЦена: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent + '\nГород: ' + product.city)
         print(sell.insert_one({
             'name': product.name,
             'price': product.price,
