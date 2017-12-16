@@ -47,7 +47,9 @@ def handle_message(message):
 
 @bot.message_handler(commands=['find'])
 def find_coins(message):
-    msg = bot.send_message(message.chat.id, "Введите название валюты")
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    markup.add('NEO','NEM','Stratis','BitShares','Ethereum','Stellar','Ripple','Dash','Lisk','Litecoin','Waves','Ethereum Classic','Monero','Bitcoin','ZCash')
+    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=markup)
     bot.register_next_step_handler(msg, process_find)
 
 @bot.message_handler(commands=['find_price'])
@@ -68,7 +70,7 @@ def process_find(message):
                 a += 'Владелец: @{}\n\n'.format(i['username'])     
             else:
                 a += 'Владелец: Не указан'  
-        bot.send_message(message.chat.id, a)
+        bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -78,8 +80,8 @@ def process_find_price(message):
         p = price.split(" ")
         n1 = int(p[0])
         n2 = int(p[1])
-        a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"price": {"$gt": n1, "$lt": n2}}).count())
-        for i in sell.find({"price": {"$gt": n1, "$lt": n2}}):
+        a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"price": {"$gte": n1, "$lte": n2}}).count())
+        for i in sell.find({"price": {"$gte": n1, "$lte": n2}}):
             a += 'Название валюты: {}\n'.format(i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
