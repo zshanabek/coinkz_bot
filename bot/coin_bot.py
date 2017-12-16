@@ -24,12 +24,44 @@ class Product:
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    welcome_msg = "Здравствуйте {0}. Что вы хотите? Купить или продать?".format(message.chat.first_name)
-    keyboard = types.InlineKeyboardMarkup(row_width = 2)
-    callback_bt1 = types.InlineKeyboardButton(text="Купить", callback_data="1")
-    callback_bt2 = types.InlineKeyboardButton(text="Продать", callback_data="2")
-    keyboard.add(callback_bt1, callback_bt2)
-    bot.send_message(message.chat.id, welcome_msg,reply_markup=keyboard)
+    welcome_msg = "Здравствуйте, {0}. Что вы хотите сделать?".format(message.chat.first_name)
+    buttons = [
+            'Купить',
+            'Продать',
+            'Найти по названию валюты',
+            'Найти по цене валюты'
+            ]
+    bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(buttons, 1))
+
+
+@bot.message_handler(content_types=['text'])
+def handle_message(message):
+    if message.text == 'Продать':
+        if (message.chat.username == None):
+            bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
+        else:
+            msg = bot.send_message(message.chat.id, """\
+                    Хорошо. Cперва, введите имя валюты.
+                    """)
+            bot.register_next_step_handler(msg, process_name_step)
+    elif message.text=='Купить':
+        a = ""
+        for i in sell.find():
+            a += 'Название валюты: {}\n'.format(i['name'])
+            a += 'Цена: $'+'{}\n'.format(i['price'])
+            a += 'Процент: {}\n'.format(i['percent'])
+            a += 'Город: {}\n'.format(i['city'])
+            if(i['username']!=None):
+                a += 'Владелец: @{}\n\n'.format(i['username'])     
+            else:
+                a += 'Владелец: Не указан'  
+        bot.send_message(message.chat.id, a)
+    elif message.text=='Найти по названию валюты':
+        msg = bot.send_message(message.chat.id, "Введите название валюты")
+        bot.register_next_step_handler(msg, process_find)
+    elif message.text=='Найти по цене валюты':
+        msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом. Например: 2000 5000")
+        bot.register_next_step_handler(msg, process_find_price)
 
 @bot.message_handler(commands=['find'])
 def find_coins(message):
@@ -37,12 +69,12 @@ def find_coins(message):
     bot.register_next_step_handler(msg, process_find)
 
 @bot.message_handler(commands=['find_price'])
-def find_coins(message):
+def find_price_coins(message):
     msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом. Например: 2000 5000")
     bot.register_next_step_handler(msg, process_find_price)
 
 def process_find(message):
-    try:
+    # try:
         coin_name = message.text  
         a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"name": coin_name}).count())
         for i in sell.find({"name": coin_name}):
@@ -55,11 +87,11 @@ def process_find(message):
             else:
                 a += 'Владелец: Не указан'  
         bot.send_message(message.chat.id, a)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_find_price(message):
-    try:
+    # try:
         price = message.text  
         p = price.split(" ")
         n1 = int(p[0])
@@ -75,31 +107,32 @@ def process_find_price(message):
             else:
                 a += 'Владелец: Не указан'  
         bot.send_message(message.chat.id, a)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
-@bot.callback_query_handler(func=lambda c: True)
-def inline(c):
-    if c.data=='2':
-        if (c.message.chat.username == None):
-            bot.send_message(c.message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
+@bot.message_handler(commands=['sell'])
+def sell(message):
+    if (message.chat.username == None):
+        bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
+    else:
+        msg = bot.send_message(message.chat.id, """\
+                Хорошо. Cперва, введите имя валюты.
+                """)
+        bot.register_next_step_handler(msg, process_name_step)
+
+@bot.message_handler(commands=['buy'])
+def bye(message):     
+    a = ""
+    for i in sell.find():
+        a += 'Название валюты: {}\n'.format(i['name'])
+        a += 'Цена: $'+'{}\n'.format(i['price'])
+        a += 'Процент: {}\n'.format(i['percent'])
+        a += 'Город: {}\n'.format(i['city'])
+        if(i['username']!=None):
+            a += 'Владелец: @{}\n\n'.format(i['username'])     
         else:
-            msg = bot.send_message(c.message.chat.id, """\
-                    Хорошо. Cперва, введите имя валюты.
-                    """)
-            bot.register_next_step_handler(msg, process_name_step)
-    elif c.data=='1':
-        a = ""
-        for i in sell.find():
-            a += 'Название валюты: {}\n'.format(i['name'])
-            a += 'Цена: $'+'{}\n'.format(i['price'])
-            a += 'Процент: {}\n'.format(i['percent'])
-            a += 'Город: {}\n'.format(i['city'])
-            if(i['username']!=None):
-                a += 'Владелец: @{}\n\n'.format(i['username'])     
-            else:
-                a += 'Владелец: Не указан'  
-        bot.send_message(c.message.chat.id, a)
+            a += 'Владелец: Не указан'  
+    bot.send_message(message.chat.id, a)
 
 
 @bot.message_handler(commands=['help'])
@@ -149,21 +182,26 @@ def process_percent_step(message):
     except Exception as e:
         bot.reply_to(message, 'oooops')
 def process_city_step(message):
-    try:
+    # try:
         chat_id = message.chat.id
         city = message.text
         product = product_dict[chat_id]
         product.city = city        
         bot.send_message(chat_id, 'Вы хотите продать ' + product.name + '\nЦена: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent + '\nГород: ' + product.city)
-        print(sell.insert_one({
+        sell.insert_one({
             'name': product.name,
             'price': int(product.price),
             'percent': int(product.percent),
             'city': product.city,
             'username': message.chat.username
-        }).inserted_id)
-    except Exception as e:
-        print(e)
-        bot.reply_to(message, 'oooops')
+        }).inserted_id
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
+
+def create_keyboard(words=None, width=None):
+        keyboard = types.ReplyKeyboardMarkup(row_width=width, resize_keyboard = True)
+        for word in words:
+            keyboard.add(types.KeyboardButton(text=word))
+        return keyboard
 if __name__ == '__main__':
      bot.polling(none_stop=True)
