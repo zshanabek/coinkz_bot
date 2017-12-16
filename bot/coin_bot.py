@@ -39,14 +39,14 @@ def find_coins(message):
 
 @bot.message_handler(commands=['find_price'])
 def find_coins(message):
-    msg = bot.send_message(message.chat.id, "Введите цену")
+    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон разделенный пробелом. Например: 2000 5000")
     bot.register_next_step_handler(msg, process_find_price)
 
-def process_find_price(message):
+def process_find(message):
     try:
-        price = message.text  
-        a = ""
-        for i in sell.find({"price": {"$lt": price}}):
+        coin_name = message.text  
+        a = 'Найдено {0} продавцa(oв)\n'.format(sell.find({"name": coin_name}).count())
+        for i in sell.find({"name": coin_name}):
             a += 'Название валюты: {}\n'.format(i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
@@ -59,11 +59,12 @@ def process_find_price(message):
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
-def process_find(message):
+def process_find_price(message):
     try:
-        coin_name = message.text  
-        a = 'Найдено {0} продавцa(oв)\n'.format(sell.find({"name": coin_name}).count())
-        for i in sell.find({"name": coin_name}):
+        price = message.text  
+        p = price.split(" ")
+        a = 'Найдено {0} продавцa(oв)\n\n'.format(sell.find({"price": {"$lte": p[0], "$gte": p[1]}}).count())
+        for i in sell.find({"price": {"$lte": p[0], "$gte": p[1]}}):
             a += 'Название валюты: {}\n'.format(i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
