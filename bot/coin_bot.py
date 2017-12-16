@@ -45,7 +45,10 @@ def inline(c):
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
             a += 'Город: {}\n'.format(i['city'])
-            a += 'Владелец: @{}\n\n'.format(i['username'])            
+            if(i['username']!=None):
+                a += 'Владелец: @{}\n\n'.format(i['username'])     
+            else:
+                a += 'Владелец: Не указан'  
         bot.send_message(c.message.chat.id, a)
 
 
