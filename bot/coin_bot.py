@@ -11,9 +11,8 @@ from pymongo import MongoClient
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
 db = client.fuckingtelegrambot
-
 sell = db.sell
-
+# db.sell.delete_many({})
 
 class Product:
     def __init__(self, name):
@@ -39,13 +38,13 @@ def find_coins(message):
 
 @bot.message_handler(commands=['find_price'])
 def find_coins(message):
-    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон разделенный пробелом. Например: 2000 5000")
+    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом. Например: 2000 5000")
     bot.register_next_step_handler(msg, process_find_price)
 
 def process_find(message):
     try:
         coin_name = message.text  
-        a = 'Найдено {0} продавцa(oв)\n'.format(sell.find({"name": coin_name}).count())
+        a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"name": coin_name}).count())
         for i in sell.find({"name": coin_name}):
             a += 'Название валюты: {}\n'.format(i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
@@ -63,8 +62,10 @@ def process_find_price(message):
     try:
         price = message.text  
         p = price.split(" ")
-        a = 'Найдено {0} продавцa(oв)\n\n'.format(sell.find({"price": {"$lte": p[0], "$gte": p[1]}}).count())
-        for i in sell.find({"price": {"$lte": p[0], "$gte": p[1]}}):
+        n1 = int(p[0])
+        n2 = int(p[1])
+        a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"price": {"$gt": n1, "$lt": n2}}).count())
+        for i in sell.find({"price": {"$gt": n1, "$lt": n2}}):
             a += 'Название валюты: {}\n'.format(i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
@@ -80,10 +81,13 @@ def process_find_price(message):
 @bot.callback_query_handler(func=lambda c: True)
 def inline(c):
     if c.data=='2':
-        msg = bot.send_message(c.message.chat.id, """\
+        if (c.message.chat.username == None):
+            bot.send_message(c.message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
+        else:
+            msg = bot.send_message(c.message.chat.id, """\
                     Хорошо. Cперва, введите имя валюты.
                     """)
-        bot.register_next_step_handler(msg, process_name_step)
+            bot.register_next_step_handler(msg, process_name_step)
     elif c.data=='1':
         a = ""
         for i in sell.find():
@@ -153,8 +157,8 @@ def process_city_step(message):
         bot.send_message(chat_id, 'Вы хотите продать ' + product.name + '\nЦена: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent + '\nГород: ' + product.city)
         print(sell.insert_one({
             'name': product.name,
-            'price': product.price,
-            'percent': product.percent,
+            'price': int(product.price),
+            'percent': int(product.percent),
             'city': product.city,
             'username': message.chat.username
         }).inserted_id)
