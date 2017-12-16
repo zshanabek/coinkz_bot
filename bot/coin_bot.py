@@ -2,11 +2,17 @@ import config
 import time
 import telebot
 from telebot import types
-from db import Data
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 
-data = Data()
+from pymongo import MongoClient
+client = MongoClient('localhost', 27017)
+
+db = client.fuckingtelegrambot
+
+sell = db.sell
+
+
 class Product:
     def __init__(self, name):
         self.name = name
@@ -14,7 +20,7 @@ class Product:
         self.amount = None
         self.percent = None
         self.city = None
-        
+        self.username = None            
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -25,19 +31,26 @@ def send_welcome(message):
     keyboard.add(callback_bt1, callback_bt2)
     bot.send_message(message.chat.id, welcome_msg,reply_markup=keyboard)
 
-
-
 @bot.callback_query_handler(func=lambda c: True)
 def inline(c):
     if c.data=='2':
         msg = bot.reply_to(c.message, """\
-                    Хорошо. Расскажите мне, что вы хотите продать. Cперва, введите ваше имя для продажи.
+                    Хорошо. Cперва, введите имя товара.
                     """)
-    bot.register_next_step_handler(msg, process_name_step)
+        bot.register_next_step_handler(msg, process_name_step)
+    elif c.data=='1':
+        a = ""
+        for i in sell.find():
+            a += 'Название монеты: {}\n'.format(i['name'])
+            a += 'Цена: $'+'{}\n'.format(i['price'])
+            a += 'Процент: {}\n'.format(i['percent'])
+            a += 'Город: {}\n\n'.format(i['city'])
+        bot.send_message(c.message.chat.id, a)
+
 
 @bot.message_handler(commands=['help'])
 def send_welcome(message):
-	bot.reply_to(message, "Howdy, how are you doing?")
+	bot.reply_to(message, "Введите команду /start для начала торговли")
 
 @bot.message_handler(content_types=["text"])
 def repeat_all_messages(message):
@@ -91,9 +104,17 @@ def process_city_step(message):
         city = message.text
         product = product_dict[chat_id]
         product.city = city        
-        bot.send_message(chat_id, 'Хорошо. Ваш зовут ' + product.name + '\n Цена товара: ' + str(product.price) + '\n Процент: ' + product.percent + '\n Город: ' + product.city)
-        data.insert_vendor(price, percent, name, city)
+        bot.send_message(chat_id, 'Хорошо. Вы хотите продать ' + product.name + '\n Цена: ' + '$'+str(product.price) + '\n Процент: ' + product.percent + '\n Город: ' + product.city)
+        print(sell.insert_one({
+            'name': product.name,
+            'price': product.price,
+            'percent': product.percent,
+            'city': product.city,
+            'username': message.chat.username
+        }).inserted_id)
+
     except Exception as e:
+        print(e)
         bot.reply_to(message, 'oooops')
 if __name__ == '__main__':
      bot.polling(none_stop=True)
