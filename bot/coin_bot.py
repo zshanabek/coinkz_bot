@@ -44,7 +44,8 @@ def inline(c):
             a += 'Название монеты: {}\n'.format(i['name'])
             a += 'Цена: $'+'{}\n'.format(i['price'])
             a += 'Процент: {}\n'.format(i['percent'])
-            a += 'Город: {}\n\n'.format(i['city'])
+            a += 'Город: {}\n'.format(i['city'])
+            a += 'Владелец: @{}\n\n'.format(i['username'])            
         bot.send_message(c.message.chat.id, a)
 
 
@@ -112,7 +113,6 @@ def process_city_step(message):
             'city': product.city,
             'username': message.chat.username
         }).inserted_id)
-
     except Exception as e:
         print(e)
         bot.reply_to(message, 'oooops')
