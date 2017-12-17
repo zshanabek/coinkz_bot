@@ -17,7 +17,8 @@ main_buttons = [
             'Купить',
             'Продать',
             'Найти по названию валюты',
-            'Найти по цене валюты'
+            'Найти по цене валюты',
+            'Мои объявления'
             ]
 class Product:
     def __init__(self, name):
@@ -43,6 +44,8 @@ def handle_message(message):
         find_coins(message)
     elif message.text=='Найти по цене валюты':
         find_price_coins(message)
+    elif message.text=='Мои объявления':
+        my_ads(message)
 
 @bot.message_handler(commands=['find'])
 def find_coins(message):
@@ -118,6 +121,24 @@ def buy(message):
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
+def my_ads(message):
+    try:   
+        username = message.chat.username
+        a = "Ваши объявления\n\n"
+        b = 1
+        if sell.find({'username':username}).count()==0:
+            bot.send_message(message.chat.id, 'У вас пока нету объявлений')
+        else:
+            for i in sell.find({'username':username}):
+                a += '{0}. Название валюты: {1}\n'.format(b,i['name'])
+                a += 'Цена: $'+'{}\n'.format(i['price'])
+                a += 'Процент: {}\n'.format(i['percent'])
+                a += 'Город: {}\n'.format(i['city'])
+                a += 'Владелец: @{}\n\n'.format(i['username'])     
+                b+=1
+            bot.send_message(message.chat.id, a)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 @bot.message_handler(commands=['help'])
 def send_welcome(message):
