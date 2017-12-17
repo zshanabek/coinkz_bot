@@ -4,10 +4,12 @@ import telebot
 from telebot import types
 import pprint
 import pdb
+from pymongo import MongoClient
+
+
 bot = telebot.TeleBot(config.token)
 product_dict = {}
-
-from pymongo import MongoClient
+search_menu = ['Поиск по цене', 'Главное меню']        
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
 coin_names = ['NEO','NEM','Stratis','BitShares','Ethereum','Stellar','Ripple','Dash','Lisk','Litecoin','Waves','Ethereum Classic','Monero','Bitcoin','ZCash'] 
@@ -46,6 +48,12 @@ def handle_message(message):
         find_price_coins(message)
     elif message.text=='Мои объявления':
         my_ads(message)
+    elif message.text=='Поиск по цене':
+        find_price_coins(message)
+    elif message.text=='Главное меню':
+        a = 'Что вы хотите сделать?'
+        bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
+        
 
 @bot.message_handler(commands=['find'])
 def find_coins(message):
@@ -56,7 +64,7 @@ def find_coins(message):
 
 @bot.message_handler(commands=['find_price'])
 def find_price_coins(message):
-    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом. Например: 2000 5000")
+    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом. Например: 2000 5000",reply_markup=create_keyboard(search_menu,1))
     bot.register_next_step_handler(msg, process_find_price)
 
 def process_find(message):
@@ -90,7 +98,7 @@ def process_find_price(message):
             a += 'Город: {}\n'.format(i['city'])
             a += 'Владелец: @{}\n\n'.format(i['username'])   
             b+=1  
-        bot.send_message(message.chat.id, a)
+        bot.send_message(message.chat.id, a, reply_markup=create_keyboard(search_menu,1))
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
