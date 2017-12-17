@@ -10,7 +10,6 @@ product_dict = {}
 from pymongo import MongoClient
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
-# db.sell.delete_many({})
 coin_names = ['NEO','NEM','Stratis','BitShares','Ethereum','Stellar','Ripple','Dash','Lisk','Litecoin','Waves','Ethereum Classic','Monero','Bitcoin','ZCash'] 
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
@@ -99,22 +98,25 @@ def sell_coin(message):
             bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
         else:
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-            markup.add('NEO','NEM','Stratis','BitShares','Ethereum','Stellar','Ripple','Dash','Lisk','Litecoin','Waves','Ethereum Classic','Monero','Bitcoin','ZCash')
+            markup.add('Bitcoin','Ethereum','Litecoin','NEO','NEM','Stratis','BitShares','Stellar','Ripple','Dash','Lisk','Waves','Ethereum Classic','Monero','ZCash')
             msg = bot.reply_to(message, 'Хорошо. Cперва, выберите криптовалюту.', reply_markup=markup)
             bot.register_next_step_handler(msg, process_name_step)
 
 @bot.message_handler(commands=['buy'])
-def buy(message):     
-    a = ""
-    b = 1
-    for i in sell.find().limit(10):
-        a += '{0}. Название валюты: {1}\n'.format(b,i['name'])
-        a += 'Цена: $'+'{}\n'.format(i['price'])
-        a += 'Процент: {}\n'.format(i['percent'])
-        a += 'Город: {}\n'.format(i['city'])
-        a += 'Владелец: @{}\n\n'.format(i['username'])     
-        b+=1
-    bot.send_message(message.chat.id, a)
+def buy(message):  
+    try:   
+        a = "Свежие объявления\n\n"
+        b = 1
+        for i in sell.find().sort('_id',-1).limit(10):
+            a += '{0}. Название валюты: {1}\n'.format(b,i['name'])
+            a += 'Цена: $'+'{}\n'.format(i['price'])
+            a += 'Процент: {}\n'.format(i['percent'])
+            a += 'Город: {}\n'.format(i['city'])
+            a += 'Владелец: @{}\n\n'.format(i['username'])     
+            b+=1
+        bot.send_message(message.chat.id, a)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 
 @bot.message_handler(commands=['help'])
@@ -177,17 +179,31 @@ def process_city_step(message):
             product.city = city
         else:
             raise Exception()    
-        bot.send_message(chat_id, 'Вы хотите продать: ' + product.name + '\nЦена: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent + '\nГород: ' + product.city, reply_markup = create_keyboard(main_buttons,1))
-        sell.insert_one({
-            'name': product.name,
-            'price': int(product.price),
-            'percent': int(product.percent),
-            'city': product.city,
-            'username': message.chat.username
-        }).inserted_id
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        markup.add('Нет', 'Да')
+        msg = bot.reply_to(message, 'Подтвердите объявление о продаже', reply_markup=markup)
+        bot.register_next_step_handler(msg, process_confirmation_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
+def process_confirmation_step(message):
+    try:
+        chat_id = message.chat.id
+        confirm_answer = message.text
+        product = product_dict[chat_id]        
+        if confirm_answer == 'Да':
+            bot.send_message(chat_id, 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nЦена: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent + '\nГород: ' + product.city, reply_markup = create_keyboard(main_buttons,1))
+            sell.insert_one({
+                'name': product.name,
+                'price': int(product.price),
+                'percent': int(product.percent),
+                'city': product.city,
+                'username': message.chat.username
+            }).inserted_id
+        else:
+            bot.send_message(chat_id, 'Вы отменили объявление о продаже', reply_markup = create_keyboard(main_buttons,1))
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 def create_keyboard(words=None, width=None):
         keyboard = types.ReplyKeyboardMarkup(row_width=width, resize_keyboard = True)
         for word in words:
@@ -195,5 +211,6 @@ def create_keyboard(words=None, width=None):
         return keyboard
 if __name__ == '__main__':
     db = client.fuckingtelegrambot
+    # db.sell.delete_many({})
     sell = db.sell
     bot.polling(none_stop=True)
