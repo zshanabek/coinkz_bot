@@ -64,7 +64,7 @@ def find_coins(message):
 
 @bot.message_handler(commands=['find_price'])
 def find_price_coins(message):
-    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом. Например: 2000 5000",reply_markup=create_keyboard(search_menu,1))
+    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом, от меньшего к большому. Например: 2000 5000",reply_markup=create_keyboard(search_menu,1))
     bot.register_next_step_handler(msg, process_find_price)
 
 def process_find(message):
@@ -85,20 +85,28 @@ def process_find(message):
 
 def process_find_price(message):
     try:
-        price = message.text  
-        p = price.split(" ")
-        n1 = int(p[0])
-        n2 = int(p[1])
-        b = 1
-        a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"price": {"$gte": n1, "$lte": n2}}).count())
-        for i in sell.find({"price": {"$gte": n1, "$lte": n2}}).limit(10):
-            a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
-            a += 'Цена: $'+'{}\n'.format(i['price'])
-            a += 'Процент: {}\n'.format(i['percent'])
-            a += 'Город: {}\n'.format(i['city'])
-            a += 'Владелец: @{}\n\n'.format(i['username'])   
-            b+=1  
-        bot.send_message(message.chat.id, a, reply_markup=create_keyboard(search_menu,1))
+        price = message.text
+
+        if price == 'Главное меню':
+            bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
+        else:
+            p = price.split(" ")
+            if((not p[0].isdigit()) and (not p[1].isdigit())):
+                msg = bot.reply_to(message, 'Введите ценовой диапозон')
+                bot.register_next_step_handler(msg, process_find_price)
+                return
+            n1 = int(p[0])
+            n2 = int(p[1])
+            b = 1
+            a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"price": {"$gte": n1, "$lte": n2}}).count())
+            for i in sell.find({"price": {"$gte": n1, "$lte": n2}}).limit(10):
+                a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
+                a += 'Цена: $'+'{}\n'.format(i['price'])
+                a += 'Процент: {}\n'.format(i['percent'])
+                a += 'Город: {}\n'.format(i['city'])
+                a += 'Владелец: @{}\n\n'.format(i['username'])   
+                b+=1  
+            bot.send_message(message.chat.id, a, reply_markup=create_keyboard(search_menu,1))
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
