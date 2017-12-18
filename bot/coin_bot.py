@@ -91,7 +91,7 @@ def process_find_price(message):
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
         else:
             p = price.split(" ")
-            if((not p[0].isdigit()) and (not p[1].isdigit())):
+            if(not (p[0].isdigit() and p[1].isdigit())):
                 msg = bot.reply_to(message, 'Введите ценовой диапозон')
                 bot.register_next_step_handler(msg, process_find_price)
                 return
