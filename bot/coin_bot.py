@@ -5,7 +5,7 @@ from telebot import types
 import pprint
 import pdb
 from pymongo import MongoClient
-
+from bson.objectid import ObjectId
 
 bot = telebot.TeleBot(config.token)
 product_dict = {}
@@ -19,6 +19,8 @@ cities = ['Алматы','Астана','Шымкент','Караганда','�
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
 main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления']
+
+delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
 class Product:
     def __init__(self, name):
         self.name = name
@@ -48,6 +50,8 @@ def handle_message(message):
         my_ads(message)
     elif message.text=='Поиск по цене':
         find_price_coins(message)
+    elif message.text=='Удалить':
+        remove(message)
     elif message.text=='Главное меню':
         a = 'Что вы хотите сделать?'
         bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
@@ -151,10 +155,42 @@ def my_ads(message):
                 a += 'Город: {}\n'.format(i['city'])
                 a += 'Владелец: @{}\n\n'.format(i['username'])     
                 b+=1
-            bot.send_message(message.chat.id, a)
+            bot.send_message(message.chat.id, a, reply_markup=create_keyboard(delete_buttons,1))                
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
+def remove(message):
+    username = message.chat.username
+    ads_number = int(sell.find({'username':username}).count())
+    if ads_number==0:
+        bot.send_message(message.chat.id, "У вас пока нету объявлений", reply_markup=create_keyboard(delete_buttons,1)) 
+    else:
+        numbers = range(1,ads_number+1)
+        print(numbers)
+        str_numbers = [str(i) for i in numbers]
+        print(str_numbers)
+
+        msg = bot.send_message(message.chat.id, "Какое по счету объявление вы хотите удалить?", reply_markup=create_keyboard(str_numbers,1))       
+        bot.register_next_step_handler(msg, process_remove_step)
+    
+def process_remove_step(message):
+    username = message.chat.username    
+    chat_id = message.chat.id
+    seq_num = int(message.text)
+    print(seq_num)
+    b=1
+    target = ''
+    for i in sell.find({'username':username}):
+        if b==seq_num:
+            target = i['_id']
+            break
+        else:
+            continue
+            b+=1
+
+    sell.delete_one({'_id': ObjectId(target)})
+
+    bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num), reply_markup=create_keyboard(delete_buttons,1))   
 def process_name_step(message):
     try:
         chat_id = message.chat.id
