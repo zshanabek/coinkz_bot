@@ -6,7 +6,10 @@ import pprint
 import pdb
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+import logging
 
+logger = telebot.logger
+telebot.logger.setLevel(logging.DEBUG) 
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 search_menu = ['Поиск по цене', 'Главное меню']        
@@ -168,29 +171,31 @@ def remove(message):
         else:
             numbers = range(1,ads_number+1)
             str_numbers = [str(i) for i in numbers]
+            str_numbers.append('Назад')
             msg = bot.send_message(message.chat.id, "Какое по счету объявление вы хотите удалить?", reply_markup=create_keyboard(str_numbers,1))       
             bot.register_next_step_handler(msg, process_remove_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 def process_remove_step(message):
     try:
-        username = message.chat.username    
-        chat_id = message.chat.id
-        seq_num = int(message.text)
-        print(seq_num)
-        b=1
-        target = ''
-        for i in sell.find({'username':username}):
-            if b==seq_num:
-                target = i['_id']
-                break
-            else:
-                continue
-                b+=1
+        if message.text == 'Назад':
+            my_ads(message)
+        else:
+            username = message.chat.username    
+            chat_id = message.chat.id
+            seq_num = int(message.text)
+            seq_num-=1
+            target = ObjectId()
+            docs = sell.find({'username':username})
+            docs_count = docs.count()
 
-        sell.delete_one({'_id': ObjectId(target)})
+            for i in range(docs_count):
+                if i==seq_num:
+                    target = docs[i]['_id']
+                print(str(i)+'fds'+str(seq_num))
 
-        bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num), reply_markup=create_keyboard(delete_buttons,1))
+            sell.delete_one({'_id': target})
+            bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1), reply_markup=create_keyboard(delete_buttons,1))
     except Exception as e:
         bot.reply_to(message, 'oooops')   
 def process_name_step(message):
