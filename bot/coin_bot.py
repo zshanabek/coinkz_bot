@@ -7,6 +7,9 @@ import pdb
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import logging
+from telebot.types import LabeledPrice
+from telebot.types import ShippingOption
+prices = [LabeledPrice(label='Премиум аккаунт', amount=4900 )]
 
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG) 
@@ -15,13 +18,13 @@ product_dict = {}
 search_menu = ['Поиск по цене', 'Главное меню']        
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
-coin_names = ['NEO','NEM','Stratis','BitShares','Ethereum','Stellar','Ripple','Dash','Lisk','Litecoin','Waves','Ethereum Classic','Monero','Bitcoin','ZCash'] 
+coin_names = ['Bitcoin','Ethereum','Litecoin','NEO','NEM','Stratis','BitShares','Stellar','Ripple','Dash','Lisk','Waves','Ethereum Classic','Monero','ZCash'] 
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
 
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
-main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления']
+main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления', 'Оплатить']
 
 delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
 class Product:
@@ -58,19 +61,45 @@ def handle_message(message):
     elif message.text=='Главное меню':
         a = 'Что вы хотите сделать?'
         bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
+    elif message.text=='Оплатить':
+        payment(message)
         
 
 @bot.message_handler(commands=['find'])
 def find_coins(message):
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-    markup.add('NEO','NEM','Stratis','BitShares','Ethereum','Stellar','Ripple','Dash','Lisk','Litecoin','Waves','Ethereum Classic','Monero','Bitcoin','ZCash')
-    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=markup)
+    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(coin_names,1))
     bot.register_next_step_handler(msg, process_find)
 
 @bot.message_handler(commands=['find_price'])
 def find_price_coins(message):
     msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом, от меньшего к большому. Например: 2000 5000",reply_markup=create_keyboard(search_menu,1))
     bot.register_next_step_handler(msg, process_find_price)
+
+@bot.message_handler(commands=['buy'])
+def payment(message):
+    bot.send_message(message.chat.id, "Оплатить")
+
+    bot.send_invoice(message.chat.id, 
+                    title='Купить премиум',
+                    description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Получи премиум аккаунт и создавай неограниченное количество объявлений''',
+                    provider_token=config.provider_token,
+                    currency='usd',
+                    is_flexible=False,  # True If you need to set up Shipping Fee
+                    prices=prices,
+                    start_parameter='coinkz-premium',
+                    invoice_payload='HAPPY FRIDAYS COUPON')
+@bot.pre_checkout_query_handler(func=lambda query: True)
+def checkout(pre_checkout_query):
+    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,
+                                  error_message="Aliens tried to steal your card's CVV, but we successfully protected your credentials,"
+                                                " try to pay again in a few minutes, we need a small rest.")
+@bot.message_handler(content_types=['successful_payment'])
+def got_payment(message):
+    bot.send_message(message.chat.id,
+                     'Ура! Спасибо за покупку премиум версии! '
+                     'Оставайтесь с нами.'.format(
+                         message.successful_payment.total_amount / 100, message.successful_payment.currency),
+                     parse_mode='Markdown')
 
 def process_find(message):
     try:
@@ -118,8 +147,13 @@ def process_find_price(message):
 
 @bot.message_handler(commands=['sell'])
 def sell_coin(message):
-    if message.text == 'Продать':
-        if (message.chat.username == None):
+    
+    current_username = message.chat.username
+
+    if sell.find({'username':current_username}).count()>=3:
+        bot.send_message(message.chat.id, "Вы достигли лимит объявлений (3 объявления). Чтобы публиковть больше объявлений вам надо заплатить")
+    else: 
+        if (current_username == None):
             bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
         else:
             msg = bot.reply_to(message, 'Хорошо. Cперва, выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True))
