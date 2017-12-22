@@ -1,3 +1,3 @@
 token = '504678057:AAF37q3u9t3TtH9GNTv3AdOl5sn5KWeAqq0'
 
-provider_token='361519591:TEST:84c0d279f636c43a6df9f4b01ebd94f4'
+provider_token='361519591:TEST:2abd849f9d4174bf7cc62726506aa6ee'
