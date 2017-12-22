@@ -15,14 +15,14 @@ logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG) 
 bot = telebot.TeleBot(config.token)
 product_dict = {}
-search_menu = ['Поиск по цене', 'Главное меню']        
+search_menu = ['Главное меню']        
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
-coin_names = ['Bitcoin','Ethereum','Litecoin','NEO','NEM','Stratis','BitShares','Stellar','Ripple','Dash','Lisk','Waves','Ethereum Classic','Monero','ZCash', 'Главное меню'] 
+coin_names = ['Bitcoin','Ethereum','Litecoin','NEO','NEM','Stratis','BitShares','Stellar','Ripple','Dash','Lisk','Waves','Ethereum Classic','Monero','ZCash'] 
 
-cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган', 'Главное меню']
+cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
 
-exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX', 'Главное меню']
+exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
 main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления']
 
@@ -59,8 +59,6 @@ def handle_message(message):
         find_price_coins(message)
     elif message.text=='Мои объявления':
         my_ads(message)
-    elif message.text=='Поиск по цене':
-        find_price_coins(message)
     elif message.text=='Удалить':
         remove(message)
     elif message.text=='Главное меню':
@@ -146,7 +144,8 @@ def process_find_price(message):
                 a += 'Город: {}\n'.format(i['city'])
                 a += 'Владелец: @{}\n\n'.format(i['username'])   
                 b+=1  
-            bot.send_message(message.chat.id, a, reply_markup=create_keyboard(search_menu,1))
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(search_menu,1))
+            bot.register_next_step_handler(msg, process_find_price)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -240,11 +239,11 @@ def process_name_step(message):
     try:
         chat_id = message.chat.id
         name = message.text
-
         if not (name in coin_names):
             msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
             bot.register_next_step_handler(msg, process_name_step)
             return
+        
         product = Product(name)
         product_dict[chat_id] = product        
         product.name = name
