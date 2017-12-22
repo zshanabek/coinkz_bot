@@ -24,15 +24,15 @@ cities = ['Алматы','Астана','Шымкент','Караганда','�
 
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
-main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления', 'Оплатить']
+main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления']
 
+premium = ['Получить премиум', 'Главное меню']
 delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
 class Product:
     def __init__(self, name):
         self.name = name
         self.exchange = None
         self.price = None        
-        self.amount = None
         self.percent = None
         self.city = None
 
@@ -40,7 +40,12 @@ class Product:
 def send_welcome(message):
     welcome_msg = "Здравствуйте, {0}. Что вы хотите сделать?".format(message.chat.first_name)
     bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(main_buttons, 1))
-
+    username = message.chat.username
+    if traders.find({ 'username': username}).count()<1:
+        traders.insert_one({
+            'username': username,
+            'is_paid':None
+        })
 
 @bot.message_handler(content_types=['text'])
 def handle_message(message):
@@ -61,7 +66,7 @@ def handle_message(message):
     elif message.text=='Главное меню':
         a = 'Что вы хотите сделать?'
         bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
-    elif message.text=='Оплатить':
+    elif message.text=='Получить премиум':
         payment(message)
         
 
@@ -77,8 +82,6 @@ def find_price_coins(message):
 
 @bot.message_handler(commands=['buy'])
 def payment(message):
-    bot.send_message(message.chat.id, "Оплатить")
-
     bot.send_invoice(message.chat.id, 
                     title='Купить премиум',
                     description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Получи премиум аккаунт и создавай неограниченное количество объявлений''',
@@ -91,8 +94,8 @@ def payment(message):
 @bot.pre_checkout_query_handler(func=lambda query: True)
 def checkout(pre_checkout_query):
     bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,
-                                  error_message="Aliens tried to steal your card's CVV, but we successfully protected your credentials,"
-                                                " try to pay again in a few minutes, we need a small rest.")
+                                  error_message="Мошенники хотели украсть CVV вашей карточки, но я успешно защитил ваши данные,"
+                                                " Попробуйте оплатить через несколько минут еще раз. Мне нужен отдых")
 @bot.message_handler(content_types=['successful_payment'])
 def got_payment(message):
     bot.send_message(message.chat.id,
@@ -100,6 +103,8 @@ def got_payment(message):
                      'Оставайтесь с нами.'.format(
                          message.successful_payment.total_amount / 100, message.successful_payment.currency),
                      parse_mode='Markdown')
+
+    traders.update_one({'username':message.chat.username},{'$set':{'is_paid':True}})
 
 def process_find(message):
     try:
@@ -147,11 +152,10 @@ def process_find_price(message):
 
 @bot.message_handler(commands=['sell'])
 def sell_coin(message):
-    
     current_username = message.chat.username
-
-    if sell.find({'username':current_username}).count()>=3:
-        bot.send_message(message.chat.id, "Вы достигли лимит объявлений (3 объявления). Чтобы публиковть больше объявлений вам надо заплатить")
+    t = traders.find_one({'username':current_username})
+    if (sell.find({'username':current_username}).count()==3 and t['is_paid']==None):
+        bot.send_message(message.chat.id, "Вы достигли лимит объявлений (3 объявления). Купите премиум пакет чтобы публиковать больше объявлений. Хотите получить премиум?", reply_markup=create_keyboard(premium,1))
     else: 
         if (current_username == None):
             bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
@@ -236,19 +240,21 @@ def process_name_step(message):
     try:
         chat_id = message.chat.id
         name = message.text
+
+        if not (name in coin_names):
+            msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
+            bot.register_next_step_handler(msg, process_name_step)
+            return
         product = Product(name)
-        product_dict[chat_id] = product
-        if (name in coin_names):
-            product.name = name
-        else:
-            raise Exception()
+        product_dict[chat_id] = product        
+        product.name = name
         msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
         bot.register_next_step_handler(msg, process_price_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
 def process_price_step(message):
-    try:
+    # try:
         chat_id = message.chat.id
         price = message.text
         if not price.isdigit():
@@ -260,8 +266,8 @@ def process_price_step(message):
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
         msg = bot.reply_to(message, 'Под какой процент?')
         bot.register_next_step_handler(msg, process_percent_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_percent_step(message):
     try:
@@ -313,17 +319,18 @@ def process_confirmation_step(message):
     try:
         chat_id = message.chat.id
         confirm_answer = message.text
-        product = product_dict[chat_id]        
+        product = product_dict[chat_id]   
+        username = message.chat.username     
         if confirm_answer == 'Да':
-            bot.send_message(chat_id, 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+message.chat.username, reply_markup = create_keyboard(main_buttons,1))
+            bot.send_message(chat_id, 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username, reply_markup = create_keyboard(main_buttons,1))
             sell.insert_one({
                 'name': product.name,
                 'price': int(product.price),
                 'percent': int(product.percent),
                 'exchange': product.exchange,                
                 'city': product.city,
-                'username': message.chat.username
-            }).inserted_id
+                'username': username
+            })
         else:
             bot.send_message(chat_id, 'Вы отменили объявление о продаже', reply_markup = create_keyboard(main_buttons,1))
     except Exception as e:
@@ -339,6 +346,6 @@ def send_welcome(message):
 	bot.reply_to(message, "Введите команду /start для начала торговли")
 if __name__ == '__main__':
     db = client.fuckingtelegrambot
-    # db.sell.delete_many({})
     sell = db.sell
+    traders = db.traders
     bot.polling(none_stop=True)
