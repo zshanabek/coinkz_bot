@@ -18,11 +18,11 @@ product_dict = {}
 search_menu = ['Поиск по цене', 'Главное меню']        
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
-coin_names = ['Bitcoin','Ethereum','Litecoin','NEO','NEM','Stratis','BitShares','Stellar','Ripple','Dash','Lisk','Waves','Ethereum Classic','Monero','ZCash'] 
+coin_names = ['Bitcoin','Ethereum','Litecoin','NEO','NEM','Stratis','BitShares','Stellar','Ripple','Dash','Lisk','Waves','Ethereum Classic','Monero','ZCash', 'Главное меню'] 
 
-cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
+cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган', 'Главное меню']
 
-exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
+exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX', 'Главное меню']
 
 main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления']
 
@@ -254,7 +254,7 @@ def process_name_step(message):
         bot.reply_to(message, 'oooops')
 
 def process_price_step(message):
-    # try:
+    try:
         chat_id = message.chat.id
         price = message.text
         if not price.isdigit():
@@ -266,8 +266,8 @@ def process_price_step(message):
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
         msg = bot.reply_to(message, 'Под какой процент?')
         bot.register_next_step_handler(msg, process_percent_step)
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def process_percent_step(message):
     try:
@@ -289,11 +289,11 @@ def process_exchange_step(message):
         chat_id = message.chat.id
         exchange = message.text
         product = product_dict[chat_id]
-        if (exchange in exchanges):
-            product.exchange = exchange
-        else:
-            raise Exception()    
-
+        if not (exchange in exchanges):
+            msg = bot.reply_to(message, 'Выберите биржу из списка')
+            bot.register_next_step_handler(msg, process_exchange_step)
+            return
+        product.exchange = exchange
         msg = bot.reply_to(message, 'Из какого города?', reply_markup=create_keyboard(cities,3))
         bot.register_next_step_handler(msg, process_city_step)
     except Exception as e:
@@ -304,10 +304,12 @@ def process_city_step(message):
         chat_id = message.chat.id
         city = message.text
         product = product_dict[chat_id]
-        if (city in cities):
-            product.city = city
-        else:
-            raise Exception()    
+
+        if not (city in cities):
+            msg = bot.reply_to(message, 'Выберите город из списка')
+            bot.register_next_step_handler(msg, process_city_step)
+            return
+        product.city = city
         
         buttons = ['Нет', 'Да']
         msg = bot.reply_to(message, 'Подтвердите объявление о продаже', reply_markup=create_keyboard(buttons,2))
