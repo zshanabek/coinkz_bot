@@ -9,7 +9,10 @@ from bson.objectid import ObjectId
 import logging
 from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
-prices = [LabeledPrice(label='Премиум аккаунт', amount=4900 )]
+silver_price = [LabeledPrice(label='Silver', amount=2000 )]
+gold_price = [LabeledPrice(label='Gold', amount=3000 )]
+platinum_price = [LabeledPrice(label='Platinum', amount=5000 )]
+
 
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG) 
@@ -24,7 +27,9 @@ cities = ['Алматы','Астана','Шымкент','Караганда','�
 
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
-main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления']
+main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления','Пакеты']
+
+packages = ['Silver', 'Gold', 'Platinum','Главное меню']
 
 premium = ['Получить премиум', 'Главное меню']
 delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
@@ -64,9 +69,8 @@ def handle_message(message):
     elif message.text=='Главное меню':
         a = 'Что вы хотите сделать?'
         bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
-    elif message.text=='Получить премиум':
-        payment(message)
-        
+    elif message.text=='Пакеты':
+        list_packages(message)      
 
 @bot.message_handler(commands=['find'])
 def find_coins(message):
@@ -78,17 +82,58 @@ def find_price_coins(message):
     msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом, от меньшего к большому. Например: 2000 5000",reply_markup=create_keyboard(search_menu,1))
     bot.register_next_step_handler(msg, process_find_price)
 
-@bot.message_handler(commands=['buy'])
-def payment(message):
-    bot.send_invoice(message.chat.id, 
+def list_packages(message):
+    msg = bot.send_message(message.chat.id, "Выберите пакет", reply_markup=create_keyboard(packages,1))
+    bot.register_next_step_handler(msg, process_package_step)
+
+def process_package_step(message):
+    if message.text == "Silver":
+        silver_invoice(message)
+    elif message.text == "Gold":
+        gold_invoice(message)
+    elif message.text == "Platinum":
+        platinum_invoice(message)
+    elif message.text == "Главное меню":
+        bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
+
+def gold_invoice(message):
+    msg = bot.send_invoice(message.chat.id, 
                     title='Купить премиум',
                     description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Получи премиум аккаунт и создавай неограниченное количество объявлений''',
                     provider_token=config.provider_token,
-                    currency='usd',
+                    currency='USD',
                     is_flexible=False,  # True If you need to set up Shipping Fee
-                    prices=prices,
+                    prices=gold_price,
                     start_parameter='coinkz-premium',
                     invoice_payload='HAPPY FRIDAYS COUPON')
+    bot.register_next_step_handler(msg, process_package_step)
+    
+
+def platinum_invoice(message):
+    msg = bot.send_invoice(message.chat.id, 
+                    title='Купить премиум',
+                    description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Получи премиум аккаунт и создавай неограниченное количество объявлений''',
+                    provider_token=config.provider_token,
+                    currency='USD',
+                    is_flexible=False,  # True If you need to set up Shipping Fee
+                    prices=platinum_price,
+                    start_parameter='coinkz-premium',
+                    invoice_payload='HAPPY FRIDAYS COUPON')
+    bot.register_next_step_handler(msg, process_package_step)
+    
+
+def silver_invoice(message):
+    msg = bot.send_invoice(message.chat.id, 
+                    title='Купить премиум',
+                    description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Получи премиум аккаунт и создавай неограниченное количество объявлений''',
+                    provider_token=config.provider_token,
+                    currency='USD',
+                    is_flexible=False,  # True If you need to set up Shipping Fee
+                    prices=silver_price,
+                    start_parameter='coinkz-premium',
+                    invoice_payload='HAPPY FRIDAYS COUPON')
+    bot.register_next_step_handler(msg, process_package_step)
+    
 @bot.pre_checkout_query_handler(func=lambda query: True)
 def checkout(pre_checkout_query):
     bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,
@@ -100,7 +145,7 @@ def got_payment(message):
                      'Ура! Спасибо за покупку премиум версии! '
                      'Оставайтесь с нами.'.format(
                          message.successful_payment.total_amount / 100, message.successful_payment.currency),
-                     parse_mode='Markdown')
+                     parse_mode='Markdown', reply_markup=create_keyboard(main_buttons,1))
 
     traders.update_one({'username':message.chat.username},{'$set':{'is_paid':True}})
 
