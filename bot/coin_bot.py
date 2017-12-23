@@ -9,9 +9,9 @@ from bson.objectid import ObjectId
 import logging
 from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
-silver_price = [LabeledPrice(label='Silver', amount=200000 )]
-gold_price = [LabeledPrice(label='Gold', amount=300000 )]
-platinum_price = [LabeledPrice(label='Platinum', amount=500000 )]
+silver_price = [LabeledPrice(label='Silver', amount=2000 )]
+gold_price = [LabeledPrice(label='Gold', amount=3000 )]
+platinum_price = [LabeledPrice(label='Platinum', amount=5000 )]
 
 
 logger = telebot.logger
@@ -88,77 +88,75 @@ def list_packages(message):
 
 def process_package_step(message):
     if message.text == "Silver":
-        silver_invoice(message)
+        msg = silver_invoice(message)
+        bot.register_next_step_handler(msg, process_package_step)
     elif message.text == "Gold":
-        gold_invoice(message)
+        msg = gold_invoice(message)
+        bot.register_next_step_handler(msg, process_package_step)
     elif message.text == "Platinum":
-        platinum_invoice(message)
+        msg = platinum_invoice(message)
+        bot.register_next_step_handler(msg, process_package_step)
     elif message.text == "Главное меню":
         bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
 
 def silver_invoice(message):
     msg = bot.send_invoice(message.chat.id, 
-                    title='Пакет Silver',
-                    description='''Хочешь публиковать больше объявлений по продажам криптовалюты?  Silver пакет даёт возможность размещения до 10 объявлений''',
-                    provider_token=config.provider_token,
-                    currency='KZT',
-                    photo_url='http://livingalegacyinc.com/wp-content/uploads/2016/09/silver.png',
-                    photo_height=300,  # !=0/None or picture won't be shown
-                    photo_width=300,
-                    photo_size=300,
-                    is_flexible=False,  # True If you need to set up Shipping Fee
-                    prices=silver_price,
-                    start_parameter='coinkz-premium',
-                    invoice_payload='HAPPY FRIDAYS COUPON')
-    bot.register_next_step_handler(msg, process_package_step)
+        title='Пакет Silver',
+        description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Silver пакет даёт возможность размещения 10 объявлений''',
+        provider_token=config.provider_token,
+        currency='USD',
+        photo_url='http://livingalegacyinc.com/wp-content/uploads/2016/09/silver.png',
+        photo_height=300,  # !=0/None or picture won't be shown
+        photo_width=300,
+        photo_size=300,
+        is_flexible=False,  # True If you need to set up Shipping Fee
+        prices=silver_price,
+        start_parameter='coinkz-silver',
+        invoice_payload='HAPPY FRIDAYS 1')
+    return msg
     
 def gold_invoice(message):
     msg = bot.send_invoice(message.chat.id, 
-                    title='Пакет Gold',
-                    description='''Хочешь публиковать больше объявлений по продажам криптовалюты?  Gold пакет даёт возможность размещения до 30 объявлений''',
-                    provider_token=config.provider_token,
-                    currency='KZT',
-                    photo_url='http://angeltd.com/wp-content/uploads/2016/06/gold-package.png',
-                    photo_height=300,  # !=0/None or picture won't be shown
-                    photo_width=280,
-                    photo_size=300,
-                    is_flexible=False,  # True If you need to set up Shipping Fee
-                    prices=gold_price,
-                    start_parameter='coinkz-premium',
-                    invoice_payload='HAPPY FRIDAYS COUPON')
-    bot.register_next_step_handler(msg, process_package_step)
+        title='Пакет Gold',
+        description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Gold пакет даёт возможность размещения 30 объявлений''',
+        provider_token=config.provider_token,
+        currency='USD',
+        photo_url='http://angeltd.com/wp-content/uploads/2016/06/gold-package.png',
+        photo_height=300,  # !=0/None or picture won't be shown
+        photo_width=280,
+        photo_size=300,
+        is_flexible=False,  # True If you need to set up Shipping Fee
+        prices=gold_price,
+        start_parameter='coinkz-gold',
+        invoice_payload='HAPPY FRIDAYS 2')
+    return msg
     
 
 def platinum_invoice(message):
     msg = bot.send_invoice(message.chat.id, 
-                    title='Пакет Platinum',
-                    description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Platinum пакет даёт возможность размещения до 50 объявлений''',
-                    provider_token=config.provider_token,
-                    currency='KZT',
-                    photo_url='https://i2.wp.com/www.buildyoursocialgame.com/wp-content/uploads/2016/11/platinum-pkg.png',
-                    photo_height=300,  # !=0/None or picture won't be shown
-                    photo_width=280,
-                    photo_size=300,
-                    is_flexible=False,  # True If you need to set up Shipping Fee
-                    prices=platinum_price,
-                    start_parameter='coinkz-premium',
-                    invoice_payload='HAPPY FRIDAYS COUPON')
-    bot.register_next_step_handler(msg, process_package_step)
-    
+        title='Пакет Platinum',
+        description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Platinum пакет даёт возможность размеще до 50 объявлений''',
+        provider_token=config.provider_token,
+        currency='USD',
+        photo_url='https://i2.wp.com/www.buildyoursocialgame.com/wp-content/uploads/2016/11/platinum-pkg.png',
+        photo_height=300,  # !=0/None or picture won't be shown
+        photo_width=280,
+        photo_size=300,
+        is_flexible=False,  
+        prices=platinum_price,
+        start_parameter='coinkz-platinum',
+        invoice_payload='HAPPY FRIDAYS 3')
+    return msg    
     
 @bot.pre_checkout_query_handler(func=lambda query: True)
 def checkout(pre_checkout_query):
     bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,
                                   error_message="Мошенники хотели украсть CVV вашей карточки, но я успешно защитил ваши данные,"
                                                 " Попробуйте оплатить через несколько минут еще раз. Мне нужен отдых")
+                                                
 @bot.message_handler(content_types=['successful_payment'])
 def got_payment(message):
-    bot.send_message(message.chat.id,
-                     'Ура! Спасибо за покупку премиум версии! '
-                     'Оставайтесь с нами.'.format(
-                         message.successful_payment.total_amount / 100, message.successful_payment.currency),
-                     parse_mode='Markdown', reply_markup=create_keyboard(main_buttons,1))
-
+    bot.send_message(message.chat.id, 'Ура! Спасибо за покупку пакета! Оставайтесь с нами')
     traders.update_one({'username':message.chat.username},{'$set':{'is_paid':True}})
 
 def process_find(message):
@@ -402,8 +400,18 @@ def create_keyboard(words=None, width=None, isOneTime=None):
 @bot.message_handler(commands=['help'])
 def send_welcome(message):
 	bot.reply_to(message, "Введите команду /start для начала торговли")
+
+@bot.message_handler(commands=['terms'])
+def command_terms(message):
+    bot.send_message(message.chat.id,
+                     'Thank you for shopping with our demo bot. We hope you like your new time machine!\n'
+                     '1. If your time machine was not delivered on time, please rethink your concept of time and try again.\n'
+                     '2. If you find that your time machine is not working, kindly contact our future service workshops on Trappist-1e.'
+                     ' They will be accessible anywhere between May 2075 and November 4000 C.E.\n'
+                     '3. If you would like a refund, kindly apply for one yesterday and we will have sent it to you immediately.')
 if __name__ == '__main__':
     db = client.fuckingtelegrambot
     sell = db.sell
     traders = db.traders
-    bot.polling(none_stop=True)
+    bot.skip_pending = True
+    bot.polling(none_stop=True, interval=0)
