@@ -10,8 +10,8 @@ import logging
 from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
 silver_price = [LabeledPrice(label='Silver', amount=200000 )]
-gold_price = [LabeledPrice(label='Gold', amount=300000 )]
-platinum_price = [LabeledPrice(label='Platinum', amount=500000 )]
+gold_price = [LabeledPrice(label='Gold', amount=500000 )]
+platinum_price = [LabeledPrice(label='Platinum', amount=800000 )]
 
 silver = "Silver"
 gold = "Gold"
