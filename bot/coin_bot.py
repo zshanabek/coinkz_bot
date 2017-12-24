@@ -9,10 +9,13 @@ from bson.objectid import ObjectId
 import logging
 from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
-silver_price = [LabeledPrice(label='Silver', amount=2000 )]
-gold_price = [LabeledPrice(label='Gold', amount=3000 )]
-platinum_price = [LabeledPrice(label='Platinum', amount=5000 )]
+silver_price = [LabeledPrice(label='Silver', amount=200000 )]
+gold_price = [LabeledPrice(label='Gold', amount=300000 )]
+platinum_price = [LabeledPrice(label='Platinum', amount=500000 )]
 
+silver = "Silver"
+gold = "Gold"
+platinum = "Platinum"
 
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG) 
@@ -29,9 +32,8 @@ exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.
 
 main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления','Пакеты']
 
-packages = ['Silver', 'Gold', 'Platinum','Главное меню']
+packages = ['Silver', 'Gold', 'Platinum','Узнать пакет','Отменить подписку','Главное меню']
 
-premium = ['Получить премиум', 'Главное меню']
 delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
 class Product:
     def __init__(self, name):
@@ -70,8 +72,8 @@ def handle_message(message):
         a = 'Что вы хотите сделать?'
         bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
     elif message.text=='Пакеты':
-        list_packages(message)      
-
+        list_packages(message)     
+        
 @bot.message_handler(commands=['find'])
 def find_coins(message):
     msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(coin_names,1))
@@ -88,23 +90,35 @@ def list_packages(message):
 
 def process_package_step(message):
     if message.text == "Silver":
-        msg = silver_invoice(message)
-        bot.register_next_step_handler(msg, process_package_step)
+        silver_invoice(message)
     elif message.text == "Gold":
-        msg = gold_invoice(message)
-        bot.register_next_step_handler(msg, process_package_step)
+        gold_invoice(message)
     elif message.text == "Platinum":
-        msg = platinum_invoice(message)
-        bot.register_next_step_handler(msg, process_package_step)
+        platinum_invoice(message)
     elif message.text == "Главное меню":
         bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
-
+    elif message.text == "Отменить подписку":
+        
+    elif message.text == "Узнать пакет":
+        a = traders.find_one({'username':message.chat.username})
+        package_id = a['is_paid']
+        if (package_id == False or package_id==None):
+            msg = bot.send_message(message.chat.id, "Вы не активировали ни один пакет")            
+        else:
+            if package_id == 1:
+                package_name = silver
+            elif package_id == 2:
+                package_name = gold
+            elif package_id == 3:
+                package_name = platinum
+            msg = bot.send_message(message.chat.id, "У вас пакет {0}".format(package_name))  
+        bot.register_next_step_handler(msg, process_package_step)
 def silver_invoice(message):
-    msg = bot.send_invoice(message.chat.id, 
+    bot.send_invoice(message.chat.id, 
         title='Пакет Silver',
         description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Silver пакет даёт возможность размещения 10 объявлений''',
         provider_token=config.provider_token,
-        currency='USD',
+        currency='KZT',
         photo_url='http://livingalegacyinc.com/wp-content/uploads/2016/09/silver.png',
         photo_height=300,  # !=0/None or picture won't be shown
         photo_width=300,
@@ -112,15 +126,14 @@ def silver_invoice(message):
         is_flexible=False,  # True If you need to set up Shipping Fee
         prices=silver_price,
         start_parameter='coinkz-silver',
-        invoice_payload='HAPPY FRIDAYS 1')
-    return msg
+        invoice_payload='Silver')
     
 def gold_invoice(message):
-    msg = bot.send_invoice(message.chat.id, 
+    bot.send_invoice(message.chat.id, 
         title='Пакет Gold',
         description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Gold пакет даёт возможность размещения 30 объявлений''',
         provider_token=config.provider_token,
-        currency='USD',
+        currency='KZT',
         photo_url='http://angeltd.com/wp-content/uploads/2016/06/gold-package.png',
         photo_height=300,  # !=0/None or picture won't be shown
         photo_width=280,
@@ -128,16 +141,14 @@ def gold_invoice(message):
         is_flexible=False,  # True If you need to set up Shipping Fee
         prices=gold_price,
         start_parameter='coinkz-gold',
-        invoice_payload='HAPPY FRIDAYS 2')
-    return msg
-    
+        invoice_payload='Gold')
 
 def platinum_invoice(message):
-    msg = bot.send_invoice(message.chat.id, 
+    bot.send_invoice(message.chat.id, 
         title='Пакет Platinum',
         description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Platinum пакет даёт возможность размеще до 50 объявлений''',
         provider_token=config.provider_token,
-        currency='USD',
+        currency='KZT',
         photo_url='https://i2.wp.com/www.buildyoursocialgame.com/wp-content/uploads/2016/11/platinum-pkg.png',
         photo_height=300,  # !=0/None or picture won't be shown
         photo_width=280,
@@ -145,17 +156,30 @@ def platinum_invoice(message):
         is_flexible=False,  
         prices=platinum_price,
         start_parameter='coinkz-platinum',
-        invoice_payload='HAPPY FRIDAYS 3')
-    return msg    
-    
+        invoice_payload='Platinum')
+
 @bot.pre_checkout_query_handler(func=lambda query: True)
 def checkout(pre_checkout_query):
-    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True, error_message="Мошенники хотели украсть CVV вашей карточки, но я успешно защитил ваши данные. Попробуйте еще раз оплатить через несколько минут")
-                                                
+    bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True,
+                                  error_message="Мошенники хотели украсть CVV вашей карточки, но я успешно защитил ваши данные,"
+                                                " Попробуйте оплатить через несколько минут еще раз. Мне нужен отдых")
 @bot.message_handler(content_types=['successful_payment'])
 def got_payment(message):
-    bot.send_message(message.chat.id, 'Ура! Спасибо за покупку пакета! Оставайтесь с нами')
-    traders.update_one({'username':message.chat.username},{'$set':{'is_paid':True}})
+    msg = bot.send_message(message.chat.id,
+                     'Спасибо за покупку {0} пакета! '
+                     'Оставайтесь с нами.'.format(message.successful_payment.invoice_payload), parse_mode='Markdown')
+
+    invoice_payload = message.successful_payment.invoice_payload
+
+    if invoice_payload == "Silver":
+        traders.update_one({'username':message.chat.username},{'$set':{'is_paid':1}})
+    elif invoice_payload == "Gold":
+        traders.update_one({'username':message.chat.username},{'$set':{'is_paid':2}})
+    elif invoice_payload == "Platinum":
+        traders.update_one({'username':message.chat.username},{'$set':{'is_paid':3}})
+    
+    bot.register_next_step_handler(msg, process_package_step)
+    
 
 def process_find(message):
     try:
@@ -411,5 +435,4 @@ if __name__ == '__main__':
     db = client.fuckingtelegrambot
     sell = db.sell
     traders = db.traders
-    bot.skip_pending = True
-    bot.polling(none_stop=True, interval=0)
+    bot.polling(none_stop=True)
