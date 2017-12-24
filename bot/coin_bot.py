@@ -32,7 +32,7 @@ exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.
 
 main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления','Пакеты']
 
-packages = ['Silver', 'Gold', 'Platinum','Узнать пакет','Отменить подписку','Главное меню']
+packages = ['Silver', 'Gold', 'Platinum','Узнать свой пакет','Отменить подписку','Главное меню']
 
 delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
 class Product:
@@ -76,7 +76,7 @@ def handle_message(message):
         
 @bot.message_handler(commands=['find'])
 def find_coins(message):
-    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(coin_names,1))
+    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(coin_names+["Главное меню"],1))
     bot.register_next_step_handler(msg, process_find)
 
 @bot.message_handler(commands=['find_price'])
@@ -98,8 +98,10 @@ def process_package_step(message):
     elif message.text == "Главное меню":
         bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
     elif message.text == "Отменить подписку":
-        
-    elif message.text == "Узнать пакет":
+        buttons = ['Нет', 'Да']
+        msg = bot.reply_to(message, 'Вы уверены, что хотите отменить подписку?', reply_markup=create_keyboard(buttons,2))
+        bot.register_next_step_handler(msg, process_package_delete_confirmation_step)
+    elif message.text == "Узнать свой пакет":
         a = traders.find_one({'username':message.chat.username})
         package_id = a['is_paid']
         if (package_id == False or package_id==None):
@@ -113,6 +115,15 @@ def process_package_step(message):
                 package_name = platinum
             msg = bot.send_message(message.chat.id, "У вас пакет {0}".format(package_name))  
         bot.register_next_step_handler(msg, process_package_step)
+
+def process_package_delete_confirmation_step(message):
+    if message.text == "Да":
+        traders.update_one({'username':message.chat.username},{'$set':{'is_paid':False}}) 
+        msg = bot.send_message(message.chat.id, "Я отменил подписку") 
+        list_packages(message)
+    elif message.text == "Нет":
+        list_packages(message)        
+        
 def silver_invoice(message):
     bot.send_invoice(message.chat.id, 
         title='Пакет Silver',
@@ -184,16 +195,20 @@ def got_payment(message):
 def process_find(message):
     try:
         coin_name = message.text  
-        b = 1
-        a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"name": coin_name}).count())
-        for i in sell.find({"name": coin_name}).limit(10):
-            a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
-            a += 'Cумма покупки: $'+'{}\n'.format(i['price'])
-            a += 'Процент: {}%\n'.format(i['percent'])
-            a += 'Город: {}\n'.format(i['city'])
-            a += 'Владелец: @{}\n\n'.format(i['username'])
-            b+=1
-        bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
+        if coin_name == 'Главное меню':
+            bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
+        else:
+            b = 1
+            a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"name": coin_name}).count())
+            for i in sell.find({"name": coin_name}).limit(10):
+                a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
+                a += 'Cумма покупки: $'+'{}\n'.format(i['price'])
+                a += 'Процент: {}%\n'.format(i['percent'])
+                a += 'Город: {}\n'.format(i['city'])
+                a += 'Владелец: @{}\n\n'.format(i['username'])
+                b+=1
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(coin_names+["Главное меню"], 1))
+            bot.register_next_step_handler(msg, process_find)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -230,13 +245,24 @@ def process_find_price(message):
 def sell_coin(message):
     current_username = message.chat.username
     t = traders.find_one({'username':current_username})
-    if (sell.find({'username':current_username}).count()==3 and t['is_paid']==None):
-        bot.send_message(message.chat.id, "Вы достигли лимит объявлений (3 объявления). Купите премиум пакет чтобы публиковать больше объявлений. Хотите получить премиум?", reply_markup=create_keyboard(premium,1))
-    else: 
-        if (current_username == None):
-            bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
-        else:
-            msg = bot.reply_to(message, 'Хорошо. Cперва, выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True))
+
+    if (current_username == None):
+        bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
+    else:
+        if (sell.find({'username':current_username}).count()==3 and (t['is_paid']==None or t['is_paid']==False)):
+            msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (3 объявления). Купите один из пакетов чтобы публиковать больше объявлений")
+            list_packages(message)
+        elif (sell.find({'username':current_username}).count()==10 and t['is_paid']==1):
+            msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (10 объявлений). Купите один из пакетов чтобы публиковать больше объявлений")
+            list_packages(message)
+        elif (sell.find({'username':current_username}).count()==30 and t['is_paid']==2):
+            msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (10 объявлений). Купите один из пакетов чтобы публиковать больше объявлений")
+            list_packages(message)            
+        elif (sell.find({'username':current_username}).count()==50 and t['is_paid']==3):
+            msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
+        else: 
+            cn = coin_names+["Главное меню"]
+            msg = bot.reply_to(message, 'Хорошо. Cперва, выберите криптовалюту.', reply_markup=create_keyboard(cn,1,True))
             bot.register_next_step_handler(msg, process_name_step)
 
 @bot.message_handler(commands=['buy'])
@@ -316,16 +342,19 @@ def process_name_step(message):
     try:
         chat_id = message.chat.id
         name = message.text
-        if not (name in coin_names):
-            msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
-            bot.register_next_step_handler(msg, process_name_step)
-            return
-        
-        product = Product(name)
-        product_dict[chat_id] = product        
-        product.name = name
-        msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
-        bot.register_next_step_handler(msg, process_price_step)
+        if name=="Главное меню":
+            bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
+        else:
+            if not (name in coin_names):
+                msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
+                bot.register_next_step_handler(msg, process_name_step)
+                return
+            
+            product = Product(name)
+            product_dict[chat_id] = product        
+            product.name = name
+            msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
+            bot.register_next_step_handler(msg, process_price_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
