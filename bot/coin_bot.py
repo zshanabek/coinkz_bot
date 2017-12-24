@@ -72,7 +72,17 @@ def handle_message(message):
         a = 'Что вы хотите сделать?'
         bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
     elif message.text=='Пакеты':
-        list_packages(message)     
+        list_packages(message)  
+    elif message.text == "Silver":
+        silver_invoice(message)        
+    elif message.text == "Gold":
+        gold_invoice(message)
+    elif message.text == "Platinum":
+        platinum_invoice(message)
+    elif message.text == "Отменить подписку":
+        cancel_subscription(message)
+    elif message.text == "Узнать свой пакет":
+        determine_package(message)
         
 @bot.message_handler(commands=['find'])
 def find_coins(message):
@@ -90,7 +100,7 @@ def list_packages(message):
 
 def process_package_step(message):
     if message.text == "Silver":
-        silver_invoice(message)
+        silver_invoice(message)        
     elif message.text == "Gold":
         gold_invoice(message)
     elif message.text == "Platinum":
@@ -98,24 +108,29 @@ def process_package_step(message):
     elif message.text == "Главное меню":
         bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
     elif message.text == "Отменить подписку":
-        buttons = ['Нет', 'Да']
-        msg = bot.reply_to(message, 'Вы уверены, что хотите отменить подписку?', reply_markup=create_keyboard(buttons,2))
-        bot.register_next_step_handler(msg, process_package_delete_confirmation_step)
+        cancel_subscription(message)
     elif message.text == "Узнать свой пакет":
-        a = traders.find_one({'username':message.chat.username})
-        package_id = a['is_paid']
-        if (package_id == False or package_id==None):
-            msg = bot.send_message(message.chat.id, "Вы не активировали ни один пакет")            
-        else:
-            if package_id == 1:
-                package_name = silver
-            elif package_id == 2:
-                package_name = gold
-            elif package_id == 3:
-                package_name = platinum
-            msg = bot.send_message(message.chat.id, "У вас пакет {0}".format(package_name))  
-        bot.register_next_step_handler(msg, process_package_step)
+        determine_package(message)
 
+def cancel_subscription(message):
+    buttons = ['Нет', 'Да']
+    msg = bot.reply_to(message, 'Вы уверены, что хотите отменить подписку?', reply_markup=create_keyboard(buttons,2))
+    bot.register_next_step_handler(msg, process_package_delete_confirmation_step)
+
+def determine_package(message):
+    a = traders.find_one({'username':message.chat.username})
+    package_id = a['is_paid']
+    if (package_id == False or package_id==None):
+        msg = bot.send_message(message.chat.id, "Вы не активировали ни один пакет")            
+    else:
+        if package_id == 1:
+            package_name = silver
+        elif package_id == 2:
+            package_name = gold
+        elif package_id == 3:
+            package_name = platinum
+        msg = bot.send_message(message.chat.id, "У вас пакет {0}".format(package_name))  
+    bot.register_next_step_handler(msg, process_package_step)
 def process_package_delete_confirmation_step(message):
     if message.text == "Да":
         traders.update_one({'username':message.chat.username},{'$set':{'is_paid':False}}) 
@@ -188,9 +203,10 @@ def got_payment(message):
         traders.update_one({'username':message.chat.username},{'$set':{'is_paid':2}})
     elif invoice_payload == "Platinum":
         traders.update_one({'username':message.chat.username},{'$set':{'is_paid':3}})
-    
+
     bot.register_next_step_handler(msg, process_package_step)
-    
+
+
 
 def process_find(message):
     try:
