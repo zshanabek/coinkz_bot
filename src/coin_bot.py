@@ -18,7 +18,7 @@ gold = "Gold"
 platinum = "Platinum"
 
 logger = telebot.logger
-# telebot.logger.setLevel(logging.DEBUG) 
+telebot.logger.setLevel(logging.DEBUG) 
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 search_menu = ['Главное меню']        
@@ -30,7 +30,7 @@ cities = ['Алматы','Астана','Шымкент','Караганда','�
 
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
-main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления','Пакеты']
+main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления','Пакеты','Настройки','Условия использования']
 
 packages = ['Silver', 'Gold', 'Platinum','Узнать свой пакет','Отменить подписку','Главное меню']
 
@@ -73,6 +73,10 @@ def handle_message(message):
         bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
     elif message.text=='Пакеты':
         list_packages(message)  
+    elif message.text=='Настройки':
+        settings(message)  
+    elif message.text=='Условия использования':
+        command_terms(message)
     elif message.text == "Silver":
         silver_invoice(message)        
     elif message.text == "Gold":
@@ -86,7 +90,7 @@ def handle_message(message):
         
 @bot.message_handler(commands=['find'])
 def find_coins(message):
-    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(coin_names+["Главное меню"],1))
+    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(['Все']+coin_names+["Главное меню"],1))
     bot.register_next_step_handler(msg, process_find)
 
 @bot.message_handler(commands=['find_price'])
@@ -213,6 +217,18 @@ def process_find(message):
         coin_name = message.text  
         if coin_name == 'Главное меню':
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
+        elif coin_name =='Все':
+            b = 1
+            a = 'Найдено продавцoв: {0}\n\n'.format(sell.find().count())
+            for i in sell.find().limit(10):
+                a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
+                a += 'Cумма покупки: $'+'{}\n'.format(i['price'])
+                a += 'Процент: {}%\n'.format(i['percent'])
+                a += 'Город: {}\n'.format(i['city'])
+                a += 'Владелец: @{}\n\n'.format(i['username'])
+                b+=1
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(coin_names+["Главное меню"], 1))
+            bot.register_next_step_handler(msg, process_find)
         else:
             b = 1
             a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"name": coin_name}).count())
@@ -476,6 +492,10 @@ def command_terms(message):
                      '2. If you find that your time machine is not working, kindly contact our future service workshops on Trappist-1e.'
                      ' They will be accessible anywhere between May 2075 and November 4000 C.E.\n'
                      '3. If you would like a refund, kindly apply for one yesterday and we will have sent it to you immediately.')
+                     
+@bot.message_handler(commands=['settings'])
+def settings(message):
+    bot.send_message(message.chat.id, 'Здесь будут настройки')
 if __name__ == '__main__':
     db = client.fuckingtelegrambot
     sell = db.sell
