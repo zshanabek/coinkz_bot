@@ -18,7 +18,7 @@ gold = "Gold"
 platinum = "Platinum"
 
 logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG) 
+# telebot.logger.setLevel(logging.DEBUG) 
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 search_menu = ['Главное меню']        
