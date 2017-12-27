@@ -1,2 +1,2 @@
-bot: python3 bot/coin_bot.py
+bot: python3 src/coin_bot.py
 worker: celery worker --app=tasks.app
