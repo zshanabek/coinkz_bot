@@ -9,6 +9,8 @@ from bson.objectid import ObjectId
 import logging
 from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
+import datetime
+
 silver_price = [LabeledPrice(label='Silver', amount=200000 )]
 gold_price = [LabeledPrice(label='Gold', amount=500000 )]
 platinum_price = [LabeledPrice(label='Platinum', amount=800000 )]
@@ -16,7 +18,6 @@ platinum_price = [LabeledPrice(label='Platinum', amount=800000 )]
 silver = "Silver"
 gold = "Gold"
 platinum = "Platinum"
-
 logger = telebot.logger
 telebot.logger.setLevel(logging.DEBUG) 
 bot = telebot.TeleBot(config.token)
@@ -30,47 +31,41 @@ cities = ['Алматы','Астана','Шымкент','Караганда','�
 
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
-main_buttons = ['Купить','Продать','Найти по названию валюты','Найти по цене валюты','Мои объявления','Пакеты','Настройки','Условия использования']
+main_buttons = ['Базар','Настройки','Условия использования']
 
 packages = ['Silver', 'Gold', 'Platinum','Узнать свой пакет','Отменить подписку','Главное меню']
 
 delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
+bazaar_buttons = ['Купить','Продать','Найти по цене валюты','Мои объявления']
+settings_buttons = ['Пакеты']
 class Product:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, city):
+        self.name = None
         self.exchange = None
         self.price = None        
         self.percent = None
-        self.city = None
+        self.city = city
+        self.comment = None
+        self.contact = None
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     welcome_msg = "Здравствуйте, {0}. Что вы хотите сделать?".format(message.chat.first_name)
-    bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(main_buttons, 1))
+    bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(words=main_buttons,width=1))
     username = message.chat.username
     if traders.find({ 'username': username}).count()<1:
         traders.insert_one({
             'username': username,
-            'is_paid':None
+            'is_paid':None,
+            "created_at": datetime.datetime.utcnow()
         })
 
 @bot.message_handler(content_types=['text'])
 def handle_message(message):
-    if message.text == 'Продать':
-        sell_coin(message)
-    elif message.text=='Купить':
-        buy(message)
-    elif message.text=='Найти по названию валюты':
-        find_coins(message)
-    elif message.text=='Найти по цене валюты':
-        find_price_coins(message)
-    elif message.text=='Мои объявления':
-        my_ads(message)
+    if message.text=='Базар':
+        bazaar(message)
     elif message.text=='Удалить':
         remove(message)
-    elif message.text=='Главное меню':
-        a = 'Что вы хотите сделать?'
-        bot.send_message(message.chat.id, a, reply_markup=create_keyboard(main_buttons, 1))
     elif message.text=='Пакеты':
         list_packages(message)  
     elif message.text=='Настройки':
@@ -88,18 +83,34 @@ def handle_message(message):
     elif message.text == "Узнать свой пакет":
         determine_package(message)
         
+
+
+def bazaar(message):
+    msg = bot.send_message(message.chat.id, 'Что вы хотите сделать', reply_markup=create_keyboard(bazaar_buttons,1,False,False))
+    bot.register_next_step_handler(msg, process_bazaar_step)
+    
+def process_bazaar_step(message):
+    if message.text =='Купить':
+        find_coins(message)
+    elif message.text == 'Продать':
+        sell_coin(message)
+    elif message.text == 'Мои объявления':
+        my_ads(message)
+    elif message.text =='Найти по цене объявления':
+        find_price_coins(message)
+
 @bot.message_handler(commands=['find'])
 def find_coins(message):
-    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(['Все']+coin_names+["Главное меню"],1))
+    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(words=['Все']+coin_names+["Главное меню"],width=1))
     bot.register_next_step_handler(msg, process_find)
 
 @bot.message_handler(commands=['find_price'])
 def find_price_coins(message):
-    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом, от меньшего к большому. Например: 2000 5000",reply_markup=create_keyboard(search_menu,1))
+    msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом, от меньшего к большому. Например: 2000 5000",reply_markup=create_keyboard(words=search_menu,width=1))
     bot.register_next_step_handler(msg, process_find_price)
 
 def list_packages(message):
-    msg = bot.send_message(message.chat.id, "Выберите пакет", reply_markup=create_keyboard(packages,1))
+    msg = bot.send_message(message.chat.id, "Выберите пакет", reply_markup=create_keyboard(words=packages,width=1))
     bot.register_next_step_handler(msg, process_package_step)
 
 def process_package_step(message):
@@ -110,7 +121,7 @@ def process_package_step(message):
     elif message.text == "Platinum":
         platinum_invoice(message)
     elif message.text == "Главное меню":
-        bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
+        bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(words=main_buttons,width=1))
     elif message.text == "Отменить подписку":
         cancel_subscription(message)
     elif message.text == "Узнать свой пакет":
@@ -118,7 +129,7 @@ def process_package_step(message):
 
 def cancel_subscription(message):
     buttons = ['Нет', 'Да']
-    msg = bot.reply_to(message, 'Вы уверены, что хотите отменить подписку?', reply_markup=create_keyboard(buttons,2))
+    msg = bot.reply_to(message, 'Вы уверены, что хотите отменить подписку?', reply_markup=create_keyboard(words=buttons,width=1))
     bot.register_next_step_handler(msg, process_package_delete_confirmation_step)
 
 def determine_package(message):
@@ -150,10 +161,10 @@ def silver_invoice(message):
         provider_token=config.provider_token,
         currency='KZT',
         photo_url='http://livingalegacyinc.com/wp-content/uploads/2016/09/silver.png',
-        photo_height=300,  # !=0/None or picture won't be shown
+        photo_height=300,  
         photo_width=300,
         photo_size=300,
-        is_flexible=False,  # True If you need to set up Shipping Fee
+        is_flexible=False,  
         prices=silver_price,
         start_parameter='coinkz-silver',
         invoice_payload='Silver')
@@ -215,8 +226,6 @@ def got_payment(message):
 def process_find(message):
     try:
         coin_name = message.text  
-        if coin_name == 'Главное меню':
-            bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
         elif coin_name =='Все':
             b = 1
             a = 'Найдено продавцoв: {0}\n\n'.format(sell.find().count())
@@ -225,9 +234,14 @@ def process_find(message):
                 a += 'Cумма покупки: $'+'{}\n'.format(i['price'])
                 a += 'Процент: {}%\n'.format(i['percent'])
                 a += 'Город: {}\n'.format(i['city'])
-                a += 'Владелец: @{}\n\n'.format(i['username'])
+                a += 'Владелец: @{}\n'.format(i['username'])
+                if len(i['comment'])<1:
+                    pass
+                else:
+                    a+= 'Комментарий: {}\n'.format(i['comment'])
+                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))
                 b+=1
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(coin_names+["Главное меню"], 1))
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=coin_names+["Главное меню"], width=1))
             bot.register_next_step_handler(msg, process_find)
         else:
             b = 1
@@ -237,9 +251,10 @@ def process_find(message):
                 a += 'Cумма покупки: $'+'{}\n'.format(i['price'])
                 a += 'Процент: {}%\n'.format(i['percent'])
                 a += 'Город: {}\n'.format(i['city'])
-                a += 'Владелец: @{}\n\n'.format(i['username'])
+                a += 'Владелец: @{}\n'.format(i['username'])
+                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))                
                 b+=1
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(coin_names+["Главное меню"], 1))
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=coin_names+["Главное меню"], width=1))
             bot.register_next_step_handler(msg, process_find)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -247,9 +262,6 @@ def process_find(message):
 def process_find_price(message):
     try:
         price = message.text
-
-        if price == 'Главное меню':
-            bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
         else:
             p = price.split(" ")
             if(not (p[0].isdigit() and p[1].isdigit())):
@@ -266,9 +278,10 @@ def process_find_price(message):
                 a += 'Процент: {}%\n'.format(i['percent'])
                 a += 'Биржа: {}\n'.format(i['exchange'])                       
                 a += 'Город: {}\n'.format(i['city'])
-                a += 'Владелец: @{}\n\n'.format(i['username'])   
+                a += 'Владелец: @{}\n'.format(i['username'])   
+                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))                
                 b+=1  
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(search_menu,1))
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=search_menu,width=1))
             bot.register_next_step_handler(msg, process_find_price)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -293,9 +306,12 @@ def sell_coin(message):
         elif (sell.find({'username':current_username}).count()==50 and t['is_paid']==3):
             msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
         else: 
-            cn = coin_names+["Главное меню"]
-            msg = bot.reply_to(message, 'Хорошо. Cперва, выберите криптовалюту.', reply_markup=create_keyboard(cn,1,True))
-            bot.register_next_step_handler(msg, process_name_step)
+            ct = cities+["Главное меню"]
+            msg = bot.reply_to(message, 'Сперва, выберите город из списка', reply_markup=create_keyboard(ct,3,True,False))
+            bot.register_next_step_handler(msg, process_city_step)
+            
+
+            
 
 @bot.message_handler(commands=['buy'])
 def buy(message):  
@@ -308,7 +324,8 @@ def buy(message):
             a += 'Процент: {}%\n'.format(i['percent'])
             a += 'Биржа: {}\n'.format(i['exchange'])            
             a += 'Город: {}\n'.format(i['city'])
-            a += 'Владелец: @{}\n\n'.format(i['username'])     
+            a += 'Владелец: @{}\n'.format(i['username'])
+            a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))
             b+=1
         bot.send_message(message.chat.id, a)
     except Exception as e:
@@ -328,9 +345,10 @@ def my_ads(message):
                 a += 'Процент: {}%\n'.format(i['percent'])
                 a += 'Биржа: {}\n'.format(i['exchange'])                            
                 a += 'Город: {}\n'.format(i['city'])
-                a += 'Владелец: @{}\n\n'.format(i['username'])     
+                a += 'Владелец: @{}\n'.format(i['username'])
+                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))                   
                 b+=1
-            bot.send_message(message.chat.id, a, reply_markup=create_keyboard(delete_buttons,1))                
+            bot.send_message(message.chat.id, a, reply_markup=create_keyboard(delete_buttons,1,False,False))                
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -339,12 +357,12 @@ def remove(message):
         username = message.chat.username
         ads_number = sell.find({'username':username}).count()
         if ads_number==0:
-            bot.send_message(message.chat.id, "У вас пока нету объявлений", reply_markup=create_keyboard(delete_buttons,1)) 
+            bot.send_message(message.chat.id, "У вас пока нету объявлений", reply_markup=create_keyboard(delete_buttons,1,False,False)) 
         else:
             numbers = range(1,ads_number+1)
             str_numbers = [str(i) for i in numbers]
             str_numbers.append('Назад')
-            msg = bot.send_message(message.chat.id, "Какое по счету объявление вы хотите удалить?", reply_markup=create_keyboard(str_numbers,1))       
+            msg = bot.send_message(message.chat.id, "Какое по счету объявление вы хотите удалить?", reply_markup=create_keyboard(str_numbers,1,False,False))       
             bot.register_next_step_handler(msg, process_remove_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -367,23 +385,54 @@ def process_remove_step(message):
                 print(str(i)+'fds'+str(seq_num))
 
             sell.delete_one({'_id': target})
-            bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1), reply_markup=create_keyboard(delete_buttons,1))
+            bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1), reply_markup=create_keyboard(delete_buttons,1,False,False))
     except Exception as e:
         bot.reply_to(message, 'oooops')   
+
+
+def process_city_step(message):
+    try:
+        chat_id = message.chat.id
+        city = message.text
+    
+        if not (city in cities):
+            msg = bot.reply_to(message, 'Выберите город из списка')
+            bot.register_next_step_handler(msg, process_city_step)
+            return
+        product = Product(city)        
+        
+        product_dict[chat_id] = product        
+        
+        product.city = city
+        msg = bot.reply_to(message, 'Ваш телефонный номер?', reply_markup=create_keyboard(['Отправить телефон','Нет'],1,True,True))
+        bot.register_next_step_handler(msg, process_phone_step)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
+
+def process_phone_step(message):
+    chat_id = message.chat.id
+    product = product_dict[chat_id]        
+    if message.contact:
+        product.contact = message.contact.phone_number
+    else:
+        product.contact = ''
+
+    msg = bot.reply_to(message, 'Теперь выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True,False))
+    bot.register_next_step_handler(msg, process_name_step)
+    
 def process_name_step(message):
     try:
         chat_id = message.chat.id
         name = message.text
         if name=="Главное меню":
-            bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1))
+            bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
         else:
             if not (name in coin_names):
                 msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
                 bot.register_next_step_handler(msg, process_name_step)
                 return
             
-            product = Product(name)
-            product_dict[chat_id] = product        
+            product = product_dict[chat_id]
             product.name = name
             msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
             bot.register_next_step_handler(msg, process_price_step)
@@ -401,7 +450,7 @@ def process_price_step(message):
         product = product_dict[chat_id]
         product.price = price
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-        msg = bot.reply_to(message, 'Под какой процент?')
+        msg = bot.reply_to(message, 'Какую комиссию вы берете? От 0 до 20')
         bot.register_next_step_handler(msg, process_percent_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -410,13 +459,18 @@ def process_percent_step(message):
     try:
         chat_id = message.chat.id
         percent = message.text
+        rng = range(0,21)
         if not percent.isdigit():
-            msg = bot.reply_to(message, 'Процент должен быть числом')
+            msg = bot.reply_to(message, 'Процент комиссии должен быть числом')
+            bot.register_next_step_handler(msg, process_percent_step)
+            return
+        if int(percent) not in rng:
+            msg = bot.reply_to(message, 'Процент комиссии должен быть между 0 и 20')
             bot.register_next_step_handler(msg, process_percent_step)
             return
         product = product_dict[chat_id]
         product.percent = percent
-        msg = bot.reply_to(message, 'По какому курсу?', reply_markup = create_keyboard(exchanges,2))
+        msg = bot.reply_to(message, 'По какому курсу?', reply_markup = create_keyboard(exchanges,2,False,False))
         bot.register_next_step_handler(msg, process_exchange_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -431,29 +485,26 @@ def process_exchange_step(message):
             bot.register_next_step_handler(msg, process_exchange_step)
             return
         product.exchange = exchange
-        msg = bot.reply_to(message, 'Из какого города?', reply_markup=create_keyboard(cities,3))
-        bot.register_next_step_handler(msg, process_city_step)
+        msg = bot.reply_to(message, 'Есть ли у вас комментарии? Если нет, то можете оставить пустым', reply_markup=create_keyboard(['Нет'],1,False,False))
+        bot.register_next_step_handler(msg, process_comment_step)
     except Exception as e:
         bot.reply_to(message, 'oooops') 
         
-def process_city_step(message):
+
+def process_comment_step(message):
     try:
         chat_id = message.chat.id
-        city = message.text
+        comment = message.text
         product = product_dict[chat_id]
-
-        if not (city in cities):
-            msg = bot.reply_to(message, 'Выберите город из списка')
-            bot.register_next_step_handler(msg, process_city_step)
-            return
-        product.city = city
-        
+        if comment=='Нет':
+             product.comment=''
+        else:
+            product.comment = comment
         buttons = ['Нет', 'Да']
-        msg = bot.reply_to(message, 'Подтвердите объявление о продаже', reply_markup=create_keyboard(buttons,2))
+        msg = bot.reply_to(message, 'Подтвердите объявление о продаже', reply_markup=create_keyboard(buttons,2,False,False))
         bot.register_next_step_handler(msg, process_confirmation_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
-
 def process_confirmation_step(message):
     try:
         chat_id = message.chat.id
@@ -461,23 +512,26 @@ def process_confirmation_step(message):
         product = product_dict[chat_id]   
         username = message.chat.username     
         if confirm_answer == 'Да':
-            bot.send_message(chat_id, 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username, reply_markup = create_keyboard(main_buttons,1))
             sell.insert_one({
                 'name': product.name,
                 'price': int(product.price),
                 'percent': int(product.percent),
                 'exchange': product.exchange,                
                 'city': product.city,
-                'username': username
+                'username': username,
+                'comment': product.comment,      
+                'phone_number': product.contact,
+                "created_at": datetime.datetime.utcnow()
             })
+            bot.send_message(chat_id, 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nКомментарий: '+product.comment, reply_markup = create_keyboard(main_buttons,1,False,False))
         else:
-            bot.send_message(chat_id, 'Вы отменили объявление о продаже', reply_markup = create_keyboard(main_buttons,1))
+            bot.send_message(chat_id, 'Вы отменили объявление о продаже', reply_markup=create_keyboard(main_buttons,1,False,False))
     except Exception as e:
         bot.reply_to(message, 'oooops')
-def create_keyboard(words=None, width=None, isOneTime=None):
+def create_keyboard(words=None, width=None, isOneTime=False, isPhone=False):
         keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=isOneTime, row_width=width, resize_keyboard = True)
         for word in words:
-            keyboard.add(types.KeyboardButton(text=word))
+            keyboard.add(types.KeyboardButton(text=word, request_contact=isPhone))
         return keyboard
 
 @bot.message_handler(commands=['help'])
@@ -495,7 +549,17 @@ def command_terms(message):
                      
 @bot.message_handler(commands=['settings'])
 def settings(message):
-    bot.send_message(message.chat.id, 'Здесь будут настройки')
+    msg = bot.send_message(message.chat.id, 'Выберите настройки', reply_markup=create_keyboard(settings_buttons+['Главное меню'],1,False,False))
+    bot.register_next_step_handler(msg, process_settings_step)
+    
+def process_settings_step(message):
+    if message.text == 'Пакеты':
+        list_packages(message)
+
+@bot.message_handler(regexp="/Главное меню/")
+def handle_message(message):
+	bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(words=main_buttons,width=1))
+
 if __name__ == '__main__':
     db = client.fuckingtelegrambot
     sell = db.sell
