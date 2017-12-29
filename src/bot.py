@@ -34,7 +34,7 @@ exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.
 main_buttons = ['Базар','Настройки','Условия использования']
 
 packages = ['Silver', 'Gold', 'Platinum','Узнать свой пакет','Отменить подписку','Главное меню']
-
+search_types_buttons = ['Найти по цене', 'Найти по названию']
 delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
 bazaar_buttons = ['Купить','Продать','Найти по цене валюты','Мои объявления']
 settings_buttons = ['Пакеты']
@@ -64,10 +64,6 @@ def send_welcome(message):
 def handle_message(message):
     if message.text=='Базар':
         bazaar(message)
-    elif message.text=='Удалить':
-        remove(message)
-    elif message.text=='Пакеты':
-        list_packages(message)  
     elif message.text=='Настройки':
         settings(message)  
     elif message.text=='Условия использования':
@@ -82,8 +78,9 @@ def handle_message(message):
         cancel_subscription(message)
     elif message.text == "Узнать свой пакет":
         determine_package(message)
-        
-
+    elif message.text == "Главное меню":
+        handle_main_menu_btn(message)
+    
 
 def bazaar(message):
     msg = bot.send_message(message.chat.id, 'Что вы хотите сделать', reply_markup=create_keyboard(bazaar_buttons,1,False,False))
@@ -91,7 +88,7 @@ def bazaar(message):
     
 def process_bazaar_step(message):
     if message.text =='Купить':
-        find_coins(message)
+        search_types(message)
     elif message.text == 'Продать':
         sell_coin(message)
     elif message.text == 'Мои объявления':
@@ -99,6 +96,15 @@ def process_bazaar_step(message):
     elif message.text =='Найти по цене объявления':
         find_price_coins(message)
 
+def search_types(message):
+    msg = bot.send_message(message.chat.id,'По каким критериям искать объявления?', reply_markup=create_keyboard(search_types_buttons,2, False,False))
+    bot.register_next_step_handler(msg, process_search_type_process)
+
+def process_search_type_process(message):
+    if message.text == 'Найти по цене':
+        find_price_coins(message)
+    elif message.text == 'Найти по названию':
+        find_coins(message)
 @bot.message_handler(commands=['find'])
 def find_coins(message):
     msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(words=['Все']+coin_names+["Главное меню"],width=1))
@@ -121,7 +127,7 @@ def process_package_step(message):
     elif message.text == "Platinum":
         platinum_invoice(message)
     elif message.text == "Главное меню":
-        bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(words=main_buttons,width=1))
+        handle_main_menu_btn(message)
     elif message.text == "Отменить подписку":
         cancel_subscription(message)
     elif message.text == "Узнать свой пакет":
@@ -226,6 +232,8 @@ def got_payment(message):
 def process_find(message):
     try:
         coin_name = message.text  
+        if coin_name == 'Главное меню':
+            handle_main_menu_btn(message)
         elif coin_name =='Все':
             b = 1
             a = 'Найдено продавцoв: {0}\n\n'.format(sell.find().count())
@@ -262,6 +270,9 @@ def process_find(message):
 def process_find_price(message):
     try:
         price = message.text
+
+        if price == 'Главное меню':
+            handle_main_menu_btn(message)
         else:
             p = price.split(" ")
             if(not (p[0].isdigit() and p[1].isdigit())):
@@ -348,10 +359,18 @@ def my_ads(message):
                 a += 'Владелец: @{}\n'.format(i['username'])
                 a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))                   
                 b+=1
-            bot.send_message(message.chat.id, a, reply_markup=create_keyboard(delete_buttons,1,False,False))                
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(delete_buttons,1,False,False))   
+            bot.register_next_step_handler(msg, process_my_ads_step)             
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
+def process_my_ads_step(message):
+    if message.text == 'Мои объявления':
+        my_ads(message)
+    elif message.text == 'Удалить':
+        remove(message)
+    elif message.text == 'Главное меню':
+        handle_main_menu_btn(message)
 def remove(message):
     try:
         username = message.chat.username
@@ -385,7 +404,8 @@ def process_remove_step(message):
                 print(str(i)+'fds'+str(seq_num))
 
             sell.delete_one({'_id': target})
-            bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1), reply_markup=create_keyboard(delete_buttons,1,False,False))
+            msg =bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1))
+            remove(message)
     except Exception as e:
         bot.reply_to(message, 'oooops')   
 
@@ -555,9 +575,12 @@ def settings(message):
 def process_settings_step(message):
     if message.text == 'Пакеты':
         list_packages(message)
+    elif message.text=='Главное меню':
+        handle_main_menu_btn(message)
+        
 
 @bot.message_handler(regexp="/Главное меню/")
-def handle_message(message):
+def handle_main_menu_btn(message):
 	bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(words=main_buttons,width=1))
 
 if __name__ == '__main__':
