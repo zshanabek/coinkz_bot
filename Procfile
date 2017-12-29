@@ -1,1 +1,1 @@
-bot: python3 src/coin_bot.py
+bot: python3 src/bot.py
