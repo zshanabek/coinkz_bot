@@ -251,7 +251,7 @@ def process_find(message):
                     a+= 'Комментарий: {}\n'.format(i['comment'])
                 a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))
                 b+=1
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=coin_names+["Главное меню"], width=1))
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=['Все']+coin_names+["Назад"], width=1))
             bot.register_next_step_handler(msg, process_find)
         else:
             b = 1
@@ -264,7 +264,7 @@ def process_find(message):
                 a += 'Владелец: @{}\n'.format(i['username'])
                 a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))                
                 b+=1
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=coin_names+["Главное меню"], width=1))
+            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=['Все']+coin_names+["Назад"], width=1))
             bot.register_next_step_handler(msg, process_find)
     except Exception as e:
         bot.reply_to(message, 'oooops')
