@@ -34,9 +34,9 @@ exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.
 main_buttons = ['Базар','Настройки','Условия использования']
 
 packages = ['Silver', 'Gold', 'Platinum','Узнать свой пакет','Отменить подписку','Главное меню']
-search_types_buttons = ['Найти по цене', 'Найти по названию']
+search_types_buttons = ['Найти по цене', 'Найти по названию','Главное меню']
 delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
-bazaar_buttons = ['Купить','Продать','Найти по цене валюты','Мои объявления']
+bazaar_buttons = ['Купить','Продать','Мои объявления']
 settings_buttons = ['Пакеты']
 class Product:
     def __init__(self, city):
@@ -93,8 +93,6 @@ def process_bazaar_step(message):
         sell_coin(message)
     elif message.text == 'Мои объявления':
         my_ads(message)
-    elif message.text =='Найти по цене объявления':
-        find_price_coins(message)
 
 def search_types(message):
     msg = bot.send_message(message.chat.id,'По каким критериям искать объявления?', reply_markup=create_keyboard(search_types_buttons,2, False,False))
@@ -104,7 +102,9 @@ def process_search_type_process(message):
     if message.text == 'Найти по цене':
         find_price_coins(message)
     elif message.text == 'Найти по названию':
-        find_coins(message)
+        find_coins(message) 
+    elif message.text == 'Главное меню':
+        handle_main_menu_btn(message)
 @bot.message_handler(commands=['find'])
 def find_coins(message):
     msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(words=['Все']+coin_names+["Главное меню"],width=1))
@@ -424,7 +424,11 @@ def process_city_step(message):
         product_dict[chat_id] = product        
         
         product.city = city
-        msg = bot.reply_to(message, 'Ваш телефонный номер?', reply_markup=create_keyboard(['Отправить телефон','Нет'],1,True,True))
+        markup = types.ReplyKeyboardMarkup(row_width=2)
+        itembtn1 = types.KeyboardButton('Нет')
+        itembtn2 = types.KeyboardButton('Отправить контакт',request_contact=True)
+        markup.add(itembtn1, itembtn2)
+        msg = bot.reply_to(message, 'Ваш телефонный номер?', reply_markup=markup)
         bot.register_next_step_handler(msg, process_phone_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
