@@ -120,12 +120,9 @@ def choose_city_buy(message):
             search_filter_dict[chat_id] = search_filter        
             search_filter.city = city
             msg = bot.reply_to(message, 'Выберите криптовалюту', reply_markup=create_keyboard(coin_names,1,False,False))
-            bot.register_next_step_handler(msg, process_name_step)
+            bot.register_next_step_handler(msg, process_name_step_buy)
     except Exception as e:
         bot.reply_to(message, 'oooops')
-def search_types(message):
-    msg = bot.send_message(message.chat.id,'По каким критериям искать объявления?', reply_markup=create_keyboard(search_types_buttons,2, False,False))
-    bot.register_next_step_handler(msg, process_search_type_process)
 
 def process_search_type_process(message):
     if message.text == 'Найти по цене':
@@ -292,21 +289,27 @@ def process_find(message):
 
 def process_find_price(message):
     # try:
+        chat_id = message.chat.id
         price = message.text
 
         if price == 'Назад':
-            search_types(message)
+            bazaar(message)
         else:
             p = price.split(" ")
-            if(not (p[0].isdigit() and p[1].isdigit())):
+            search_filter = search_filter_dict[chat_id]              
+            if p[0]=='Все':
+                filter_params = {"city": search_filter.city,"name": search_filter.currency}
+            elif(p[0].isdigit() and p[1].isdigit()):
+                n1 = int(p[0])
+                n2 = int(p[1])
+                filter_params = {"price": {"$gte": n1, "$lte": n2},"city": search_filter.city,"name": search_filter.currency}
+            else:
                 msg = bot.reply_to(message, 'Введите ценовой диапозон')
                 bot.register_next_step_handler(msg, process_find_price)
                 return
-            n1 = int(p[0])
-            n2 = int(p[1])
             b = 1
-            a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"price": {"$gte": n1, "$lte": n2}}).count())
-            for i in sell.find({"price": {"$gte": n1, "$lte": n2}}).limit(10):
+            a = 'Найдено продавцoв: {0}\n\n'.format(sell.find(filter_params).count())
+            for i in sell.find(filter_params):
                 a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
                 a += 'Сумма покупки: $'+'{}\n'.format(i['price'])
                 a += 'Процент: {}%\n'.format(i['percent'])
@@ -448,8 +451,29 @@ def process_phone_step(message):
     msg = bot.reply_to(message, 'Теперь выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True,False))
     bot.register_next_step_handler(msg, process_name_step)
     
+def process_name_step_buy(message):
+    try:
+        chat_id = message.chat.id
+        currency = message.text
+        if currency=="Главное меню":
+            bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
+        else:
+            if not (currency in coin_names):
+                msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
+                bot.register_next_step_handler(msg, process_name_step)
+                return
+
+            search_filter = search_filter_dict[chat_id]
+            search_filter.currency = currency
+
+            msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом, от меньшего к большому. Например: 2000 5000. Чтобы искать все цены нажмите на кнопку 'Все'",reply_markup=create_keyboard(words=search_menu,width=1))
+
+            bot.register_next_step_handler(msg, process_find_price)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
+       
 def process_name_step(message):
-    # try:
+    try:
         chat_id = message.chat.id
         name = message.text
         if name=="Главное меню":
@@ -460,22 +484,13 @@ def process_name_step(message):
                 bot.register_next_step_handler(msg, process_name_step)
                 return
 
-            bot.send_message(chat_id, str(inspect.stack()))            
-            if str(inspect.stack()[1][3])=='choose_city_buy':
-                search_filter = search_filter_dict[chat_id]
-                search_filter.name = name
+            product = product_dict[chat_id]
+            product.name = name
 
-                msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом, от меньшего к большому. Например: 2000 5000. Чтобы искать все цены нажмите на кнопку 'Все'",reply_markup=create_keyboard(words=search_menu,width=1))
-
-                bot.register_next_step_handler(msg, process_find_price)
-            else:
-                product = product_dict[chat_id]
-                product.name = name
-
-                msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
-                bot.register_next_step_handler(msg, process_price_step)
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+            msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
+            bot.register_next_step_handler(msg, process_price_step)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def process_price_step(message):
     try:
