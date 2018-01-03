@@ -462,7 +462,7 @@ def process_name_step_buy(message):
         if currency=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
         else:
-            if not (currency in coin_names):
+            if not (currency in ["Все"]+coin_names):
                 msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
                 bot.register_next_step_handler(msg, process_name_step_buy)
                 return
