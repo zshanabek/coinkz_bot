@@ -119,7 +119,7 @@ def choose_city_buy(message):
             
             search_filter_dict[chat_id] = search_filter        
             search_filter.city = city
-            msg = bot.reply_to(message, 'Выберите криптовалюту', reply_markup=create_keyboard(coin_names,1,False,False))
+            msg = bot.reply_to(message, 'Выберите криптовалюту', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
             bot.register_next_step_handler(msg, process_name_step_buy)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -464,7 +464,7 @@ def process_name_step_buy(message):
         else:
             if not (currency in coin_names):
                 msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
-                bot.register_next_step_handler(msg, process_name_step)
+                bot.register_next_step_handler(msg, process_name_step_buy)
                 return
 
             search_filter = search_filter_dict[chat_id]
