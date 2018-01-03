@@ -11,22 +11,22 @@ from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
 import datetime
 import inspect
-silver_price = [LabeledPrice(label='Silver', amount=200000 )]
-gold_price = [LabeledPrice(label='Gold', amount=500000 )]
-platinum_price = [LabeledPrice(label='Platinum', amount=800000 )]
+silver_price = [LabeledPrice(label='Silver', amount=200000)]
+gold_price = [LabeledPrice(label='Gold', amount=500000)]
+platinum_price = [LabeledPrice(label='Platinum', amount=800000)]
 
 silver = "Silver"
 gold = "Gold"
 platinum = "Platinum"
 logger = telebot.logger
-telebot.logger.setLevel(logging.DEBUG) 
+telebot.logger.setLevel(logging.DEBUG)
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 search_filter_dict = {}
-search_menu = ['Все','Назад']        
+search_menu = ['Все', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
-coin_names = ['Bitcoin','Ethereum','Litecoin','NEO','NEM','Stratis','BitShares','Stellar','Ripple','Dash','Lisk','Waves','Ethereum Classic','Monero','ZCash'] 
+coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
 
@@ -288,21 +288,25 @@ def process_find(message):
         bot.reply_to(message, 'oooops')
 
 def process_find_price(message):
-    # try:
+    try:
         chat_id = message.chat.id
         price = message.text
-
+        filter_params = {}
+        search_filter = search_filter_dict[chat_id]    
         if price == 'Назад':
             bazaar(message)
         else:
             p = price.split(" ")
-            search_filter = search_filter_dict[chat_id]              
+            if search_filter.city != "Все":
+                filter_params["city"]=search_filter.city
+            if search_filter.currency != "Все":
+                filter_params["name"]=search_filter.currency
             if p[0]=='Все':
-                filter_params = {"city": search_filter.city,"name": search_filter.currency}
+                filter_params["price"] = {"$gt":0}
             elif(p[0].isdigit() and p[1].isdigit()):
                 n1 = int(p[0])
                 n2 = int(p[1])
-                filter_params = {"price": {"$gte": n1, "$lte": n2},"city": search_filter.city,"name": search_filter.currency}
+                filter_params["price"] = {"$gte": n1, "$lte": n2}
             else:
                 msg = bot.reply_to(message, 'Введите ценовой диапозон')
                 bot.register_next_step_handler(msg, process_find_price)
@@ -320,8 +324,8 @@ def process_find_price(message):
                 b+=1   
             msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=search_menu,width=1))
             bot.register_next_step_handler(msg, process_find_price)
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 @bot.message_handler(commands=['sell'])
 def sell_coin(message):

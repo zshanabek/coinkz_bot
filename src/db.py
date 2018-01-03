@@ -38,20 +38,21 @@ usernames = ['iSapar', 'zshanabek', 'Yermuhanbet', 'KassymkhanTJ', 'bimurat_mukh
 sell = db.sell
 traders = db.traders
 
-for i in range(0,100):
-    sell.insert_one({
-        'name': random.choice(coin_names),
-        'price': random.randint(10, 200000),
-        'percent': random.randint(0, 20),
-        'exchange': random.choice(exchanges),                
-        'city': random.choice(cities),
-        'username': random.choice(usernames),
-        'comment': fake.text(),      
-        'phone_number': fake.phone_number(),
-        "created_at": random_date(d1, d2)
-    })
+# for i in range(0,100):
+#     sell.insert_one({
+#         'name': random.choice(coin_names),
+#         'price': random.randint(10, 200000),
+#         'percent': random.randint(0, 20),
+#         'exchange': random.choice(exchanges),                
+#         'city': random.choice(cities),
+#         'username': random.choice(usernames),
+#         'comment': fake.text(),      
+#         'phone_number': fake.phone_number(),
+#         "created_at": random_date(d1, d2)
+#     })
 
-cursor = sell.find({"price": {"$gte": 0, "$lte": 5000}})
+cursor = sell.find({ 'city': 'Астана' })
 
-for document in cursor: 
+c1 = cursor.find({'exchange':'Bitcoin'})
+for document in c1: 
     pprint(document)
