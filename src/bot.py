@@ -11,6 +11,7 @@ from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
 import datetime
 import inspect
+import math
 silver_price = [LabeledPrice(label='Silver', amount=200000)]
 gold_price = [LabeledPrice(label='Gold', amount=500000)]
 platinum_price = [LabeledPrice(label='Platinum', amount=800000)]
@@ -23,7 +24,7 @@ telebot.logger.setLevel(logging.DEBUG)
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 search_filter_dict = {}
-search_menu = ['Все', 'Назад']
+search_menu = ['Все','Определенная цена', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
@@ -43,7 +44,7 @@ class Product:
     def __init__(self, city):
         self.name = None
         self.exchange = None
-        self.price = None        
+        self.price = None
         self.percent = None
         self.city = city
         self.comment = None
@@ -54,6 +55,7 @@ class SearchFilter:
         self.city = city
         self.currency = None
         self.price = None
+        self.commission = None
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -247,48 +249,8 @@ def got_payment(message):
 
     bot.register_next_step_handler(msg, process_package_step)
 
-
-
-def process_find(message):
-    try:
-        coin_name = message.text  
-        if coin_name == 'Назад':
-            search_types(message)
-        elif coin_name =='Все':
-            b = 1
-            a = 'Найдено продавцoв: {0}\n\n'.format(sell.find().count())
-            for i in sell.find().limit(10):
-                a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
-                a += 'Cумма покупки: $'+'{}\n'.format(i['price'])
-                a += 'Процент: {}%\n'.format(i['percent'])
-                a += 'Город: {}\n'.format(i['city'])
-                a += 'Владелец: @{}\n'.format(i['username'])
-                if len(i['comment'])<1:
-                    pass
-                else:
-                    a+= 'Комментарий: {}\n'.format(i['comment'])
-                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))
-                b+=1
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=['Все']+coin_names+["Назад"], width=1))
-            bot.register_next_step_handler(msg, process_find)
-        else:
-            b = 1
-            a = 'Найдено продавцoв: {0}\n\n'.format(sell.find({"name": coin_name}).count())
-            for i in sell.find({"name": coin_name}).limit(10):
-                a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
-                a += 'Cумма покупки: $'+'{}\n'.format(i['price'])
-                a += 'Процент: {}%\n'.format(i['percent'])
-                a += 'Город: {}\n'.format(i['city'])
-                a += 'Владелец: @{}\n'.format(i['username'])
-                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))                
-                b+=1
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=['Все']+coin_names+["Назад"], width=1))
-            bot.register_next_step_handler(msg, process_find)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
-
 def process_find_price(message):
-    try:
+    # try:
         chat_id = message.chat.id
         price = message.text
         filter_params = {}
@@ -296,37 +258,85 @@ def process_find_price(message):
         if price == 'Назад':
             bazaar(message)
         else:
-            p = price.split(" ")
-            if search_filter.city != "Все":
-                filter_params["city"]=search_filter.city
-            if search_filter.currency != "Все":
-                filter_params["name"]=search_filter.currency
-            if p[0]=='Все':
-                filter_params["price"] = {"$gt":0}
-            elif(p[0].isdigit() and p[1].isdigit()):
-                n1 = int(p[0])
-                n2 = int(p[1])
-                filter_params["price"] = {"$gte": n1, "$lte": n2}
+            if price=='Все':
+               search_filter.price = {"$gt":0}
             else:
-                msg = bot.reply_to(message, 'Введите ценовой диапозон')
-                bot.register_next_step_handler(msg, process_find_price)
-                return
-            b = 1
-            a = 'Найдено продавцoв: {0}\n\n'.format(sell.find(filter_params).count())
-            for i in sell.find(filter_params):
-                a += '{0}. Название валюты: {1}\n'.format(b, i['name'])
-                a += 'Сумма покупки: $'+'{}\n'.format(i['price'])
-                a += 'Процент: {}%\n'.format(i['percent'])
-                a += 'Биржа: {}\n'.format(i['exchange'])                       
-                a += 'Город: {}\n'.format(i['city'])
-                a += 'Владелец: @{}\n'.format(i['username'])   
-                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))                
-                b+=1   
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(words=search_menu,width=1))
-            bot.register_next_step_handler(msg, process_find_price)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+                p = price.split(" ")
+                if(p[0].isdigit() and p[1].isdigit()):
+                    n1 = int(p[0])
+                    n2 = int(p[1])
+                    search_filter.price = {"$gte": n1, "$lte": n2}
+                else:
+                    msg = bot.reply_to(message, 'Введите ценовой диапозон')
+                    bot.register_next_step_handler(msg, process_find_price)
+                    return
+            
+            msg = bot.send_message(message.chat.id, 'Какую комиссию вы хотите найти? Если для вас это не важно нажмите "Все"', reply_markup=create_keyboard(words=search_menu,width=1))
+            bot.register_next_step_handler(msg, process_commission_filter_step)
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
+def process_commission_filter_step(message):
+    # try:
+        chat_id = message.chat.id
+        commission = message.text
+        search_filter = search_filter_dict[chat_id]    
+        if commission == 'Назад':
+            bazaar(message)
+        else:
+            if commission=='Все':
+               search_filter.commission = {"$gt":0}
+            else:
+                p = commission.split(" ")
+                if(p[0].isdigit() and p[1].isdigit()):
+                    n1 = int(p[0])
+                    n2 = int(p[1])
+                    search_filter.commission = {"$gte": n1, "$lte": n2}
+                else:
+                    msg = bot.reply_to(message, 'Введите два числа разделенные пробелом')
+                    bot.register_next_step_handler(msg, process_commission_filter_step)
+                    return
+            msg = bot.send_message(message.chat.id, 'Выберите дату', reply_markup=create_keyboard(words=['Вчера','Назад'], width=1))
+            bot.register_next_step_handler(msg, process_date_filter_step)
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
+
+def process_date_filter_step(message):
+    chat_id = message.chat.id
+    date = message.text
+    search_filter = search_filter_dict[chat_id]  
+    filter_params = {}
+    filter_params["price"]=search_filter.price
+    filter_params["commission"]=search_filter.commission
+
+    bot.send_message(chat_id, str(search_filter.commission)+" "+ str(search_filter.price)+" "+str(search_filter.city)+ " " + str(search_filter.currency))
+    if date == 'Назад':
+        bazaar(message)
+    else:
+        if search_filter.city != "Все":
+            filter_params["city"]=search_filter.city
+        if search_filter.currency != "Все":
+            filter_params["name"]=search_filter.currency
+            
+        b = 1
+        ads_count = sell.find(filter_params).count()
+        a = 'Найдено продавцoв: {0}\n\n'.format(ads_count)
+        for i in sell.find(filter_params):
+            a += '{0}. Криптовалюта: {1}\n'.format(b, i['name'])
+            a += 'Сумма покупки: $'+'{}\n'.format(i['price'])
+            a += 'Комиссия: {}%\n'.format(i['percent'])
+            a += 'Биржа: {}\n'.format(i['exchange'])                       
+            a += 'Город: {}\n'.format(i['city'])
+            a += 'Владелец: @{}\n'.format(i['username'])   
+            a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))                
+            b+=1
+        pages = math.ceil(ads_count/3.0)
+        keyboard = types.InlineKeyboardMarkup()
+        for button in range(1,pages+1):
+            callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
+            keyboard.add(callback_button)
+        msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
+        bot.register_next_step_handler(msg, process_date_filter_step)
 @bot.message_handler(commands=['sell'])
 def sell_coin(message):
     current_username = message.chat.username
@@ -366,7 +376,7 @@ def my_ads(message):
                 a += 'Биржа: {}\n'.format(i['exchange'])                            
                 a += 'Город: {}\n'.format(i['city'])
                 a += 'Владелец: @{}\n'.format(i['username'])
-                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))                   
+                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))
                 b+=1
             msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(delete_buttons,1,False,False))   
             bot.register_next_step_handler(msg, process_my_ads_step)             
@@ -585,11 +595,12 @@ def process_confirmation_step(message):
             bot.send_message(chat_id, 'Вы отменили объявление о продаже', reply_markup=create_keyboard(main_buttons,1,False,False))
     except Exception as e:
         bot.reply_to(message, 'oooops')
+
 def create_keyboard(words=None, width=None, isOneTime=False, isPhone=False):
-        keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=isOneTime, row_width=width, resize_keyboard = True)
-        for word in words:
-            keyboard.add(types.KeyboardButton(text=word, request_contact=isPhone))
-        return keyboard
+    keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=isOneTime, row_width=width, resize_keyboard = True)
+    for word in words:
+        keyboard.add(types.KeyboardButton(text=word, request_contact=isPhone))
+    return keyboard
 
 @bot.message_handler(commands=['help'])
 def send_welcome(message):

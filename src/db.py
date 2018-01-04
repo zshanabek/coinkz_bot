@@ -38,7 +38,7 @@ usernames = ['iSapar', 'zshanabek', 'Yermuhanbet', 'KassymkhanTJ', 'bimurat_mukh
 sell = db.sell
 traders = db.traders
 
-# for i in range(0,100):
+# for i in range(0,1000):
 #     sell.insert_one({
 #         'name': random.choice(coin_names),
 #         'price': random.randint(10, 200000),
@@ -51,8 +51,17 @@ traders = db.traders
 #         "created_at": random_date(d1, d2)
 #     })
 
-cursor = sell.find({ 'city': 'Астана' })
+# def skiplimit(page_size, page_num):
+#     # Calculate number of documents to skip
+#     skips = page_size * (page_num - 1)
 
-c1 = cursor.find({'exchange':'Bitcoin'})
-for document in c1: 
+#     # Skip and limit
+#     cursor = sell.find().skip(skips).limit(page_size)
+
+#     # Return documents
+#     return cursor
+# cursor = skiplimit(2,1)
+
+cursor = sell.find({"city":"Алматы","name":"Ethereum"})
+for document in cursor: 
     pprint(document)
