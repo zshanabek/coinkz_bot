@@ -26,7 +26,7 @@ product_dict = {}
 search_filter_dict = {}
 search_menu = ['Все', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
-date_buttons = ['Сутки','3 суток','Неделя','Назад']
+date_buttons = ['По дате','По комиссии','Назад']
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
@@ -56,6 +56,7 @@ class SearchFilter:
         self.currency = None
         self.price = None
         self.commission = None
+        self.date = None
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -284,7 +285,7 @@ def process_commission_filter_step(message):
             bazaar(message)
         else:
             if commission=='Все':
-               search_filter.commission = {"$gt":0}
+               search_filter.commission = {"$gte":0}
             else:
                 p = commission.split(" ")
                 if(p[0].isdigit() and p[1].isdigit()):
@@ -295,36 +296,27 @@ def process_commission_filter_step(message):
                     msg = bot.reply_to(message, 'Введите два числа разделенные пробелом')
                     bot.register_next_step_handler(msg, process_commission_filter_step)
                     return
-            msg = bot.send_message(message.chat.id, 'Выберите дату', reply_markup=create_keyboard(words=date_buttons, width=1))
-            bot.register_next_step_handler(msg, process_date_filter_step)
+            msg = bot.send_message(message.chat.id, 'Выберите сортировку', reply_markup=create_keyboard(words=date_buttons, width=1))
+            bot.register_next_step_handler(msg, process_sort_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
-def process_date_filter_step(message):
+def process_sort_step(message):
     chat_id = message.chat.id
-    date = message.text
-    search_filter = search_filter_dict[chat_id]  
-    filter_params = {}
+    sort_type = message.text
 
-    filter_params["price"]=search_filter.price
-    filter_params["percent"]=search_filter.commission
-    if search_filter.city != "Все":
-        filter_params["city"]=search_filter.city
-    if search_filter.currency != "Все":
-        filter_params["name"]=search_filter.currency
-    bot.send_message(chat_id, str(search_filter_dict))
-    if date == 'Назад':
+    if sort_type == 'Назад':
         bazaar(message)
     else:
-        ads_count = sell.find(filter_params).count()
-        a = skiplimit(3, 1, chat_id)
-        pages = math.ceil(ads_count/3.0)
         keyboard = types.InlineKeyboardMarkup()
+        filter_params = get_filter_params(chat_id)
+        pages = get_pages_num(filter_params)
+        a = skiplimit(3,1,filter_params)        
         for button in range(1,pages+1):
             callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
             keyboard.add(callback_button)
         msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
-        bot.register_next_step_handler(msg, process_date_filter_step)
+        bot.register_next_step_handler(msg, process_sort_step)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
@@ -332,25 +324,18 @@ def callback_inline(call):
         if call.data.isdigit():
             chat_id = call.message.chat.id
             search_filter = search_filter_dict[chat_id]              
-            filter_params = {}
-
-            filter_params["price"]=search_filter.price
-            filter_params["percent"]=search_filter.commission
-            if search_filter.city != "Все":
-                filter_params["city"]=search_filter.city
-            if search_filter.currency != "Все":
-                filter_params["name"]=search_filter.currency
-            ads_count = sell.find(filter_params).count()
-            
-            pages = math.ceil(ads_count/3.0)
+           
             keyboard = types.InlineKeyboardMarkup()
-            a = skiplimit(3,int(call.data),chat_id)
+            filter_params = get_filter_params(chat_id) 
+            pages = get_pages_num(filter_params)                       
+            a = skiplimit(3,int(call.data),filter_params)
             for button in range(1,pages+1):
                 callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
                 keyboard.add(callback_button)
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
-            
-def skiplimit(page_size, page_num, chat_id):
+
+
+def get_filter_params(chat_id):
     search_filter = search_filter_dict[chat_id]  
     filter_params = {}
 
@@ -360,6 +345,16 @@ def skiplimit(page_size, page_num, chat_id):
         filter_params["city"]=search_filter.city
     if search_filter.currency != "Все":
         filter_params["name"]=search_filter.currency
+
+    return filter_params
+
+def get_pages_num(filter_params):
+    ads_count = sell.find(filter_params).count()
+    pages = math.ceil(ads_count/3.0)
+
+    return pages 
+
+def skiplimit(page_size, page_num, filter_params):
     skips = page_size * (page_num - 1)
 
     cursor = sell.find(filter_params).skip(skips).limit(page_size)
