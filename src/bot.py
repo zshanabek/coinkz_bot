@@ -4,6 +4,7 @@ import telebot
 from telebot import types
 import pprint
 import pdb
+import pymongo
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import logging
@@ -26,7 +27,7 @@ product_dict = {}
 search_filter_dict = {}
 search_menu = ['Все', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
-date_buttons = ['По дате','По комиссии','Назад']
+date_buttons = ['Сортировать по дате','Сортировать по комиссии','Назад']
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
@@ -56,7 +57,7 @@ class SearchFilter:
         self.currency = None
         self.price = None
         self.commission = None
-        self.date = None
+        self.sort_type = None
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -259,7 +260,7 @@ def process_find_price(message):
             bazaar(message)
         else:
             if price=='Все':
-               search_filter.price = {"$gt":0}
+               search_filter.price = {"$gte":0}
             else:
                 p = price.split(" ")
                 if(p[0].isdigit() and p[1].isdigit()):
@@ -304,14 +305,19 @@ def process_commission_filter_step(message):
 def process_sort_step(message):
     chat_id = message.chat.id
     sort_type = message.text
-
+    search_filter = search_filter_dict[chat_id]        
     if sort_type == 'Назад':
         bazaar(message)
     else:
-        keyboard = types.InlineKeyboardMarkup()
+        search_filter.sort_type = []        
+        if sort_type == 'Сортировать по дате':
+            search_filter.sort_type.append(("created_at", -1))
+        elif sort_type == 'Сортировать по комиссии':
+            search_filter.sort_type.append(("percent", -1))
         filter_params = get_filter_params(chat_id)
         pages = get_pages_num(filter_params)
-        a = skiplimit(3,1,filter_params)        
+        a = skiplimit(3,1,filter_params, chat_id)   
+        keyboard = types.InlineKeyboardMarkup()
         for button in range(1,pages+1):
             callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
             keyboard.add(callback_button)
@@ -328,7 +334,7 @@ def callback_inline(call):
             keyboard = types.InlineKeyboardMarkup()
             filter_params = get_filter_params(chat_id) 
             pages = get_pages_num(filter_params)                       
-            a = skiplimit(3,int(call.data),filter_params)
+            a = skiplimit(3,int(call.data),filter_params,chat_id)
             for button in range(1,pages+1):
                 callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
                 keyboard.add(callback_button)
@@ -354,10 +360,10 @@ def get_pages_num(filter_params):
 
     return pages 
 
-def skiplimit(page_size, page_num, filter_params):
+def skiplimit(page_size, page_num, filter_params, chat_id):
+    search_filter = search_filter_dict[chat_id]  
     skips = page_size * (page_num - 1)
-
-    cursor = sell.find(filter_params).skip(skips).limit(page_size)
+    cursor = sell.find(filter_params).skip(skips).limit(page_size).sort(search_filter.sort_type)
     b = 1
     ads_count = sell.find(filter_params).count()
     a = 'Найдено продавцoв: {0}\n\n'.format(ads_count)
@@ -411,7 +417,6 @@ def my_ads(message):
                 a += 'Процент: {}%\n'.format(i['percent'])
                 a += 'Биржа: {}\n'.format(i['exchange'])                            
                 a += 'Город: {}\n'.format(i['city'])
-                a += 'Владелец: @{}\n'.format(i['username'])
                 a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))
                 b+=1
             msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(delete_buttons,1,False,False))   
