@@ -278,7 +278,7 @@ def process_find_price(message):
         bot.reply_to(message, 'oooops')
 
 def process_commission_filter_step(message):
-    try:
+    # try:
         chat_id = message.chat.id
         commission = message.text
         search_filter = search_filter_dict[chat_id]    
@@ -288,19 +288,17 @@ def process_commission_filter_step(message):
             if commission=='Все':
                search_filter.commission = {"$gte":0}
             else:
-                p = commission.split(" ")
-                if(p[0].isdigit() and p[1].isdigit()):
-                    n1 = int(p[0])
-                    n2 = int(p[1])
-                    search_filter.commission = {"$gte": n1, "$lte": n2}
+                if(commission.isdigit()):
+                    com = int(commission)
+                    search_filter.commission = {"$eq": com}
                 else:
                     msg = bot.reply_to(message, 'Введите два числа разделенные пробелом')
                     bot.register_next_step_handler(msg, process_commission_filter_step)
                     return
             msg = bot.send_message(message.chat.id, 'Выберите сортировку', reply_markup=create_keyboard(words=date_buttons, width=1))
             bot.register_next_step_handler(msg, process_sort_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_sort_step(message):
     chat_id = message.chat.id
@@ -650,11 +648,11 @@ def send_welcome(message):
 @bot.message_handler(commands=['terms'])
 def command_terms(message):
     bot.send_message(message.chat.id,
-                     'Thank you for shopping with our demo bot. We hope you like your new time machine!\n'
-                     '1. If your time machine was not delivered on time, please rethink your concept of time and try again.\n'
-                     '2. If you find that your time machine is not working, kindly contact our future service workshops on Trappist-1e.'
-                     ' They will be accessible anywhere between May 2075 and November 4000 C.E.\n'
-                     '3. If you would like a refund, kindly apply for one yesterday and we will have sent it to you immediately.')
+        'Thank you for shopping with our demo bot. We hope you like your new time machine!\n'
+        '1. If your time machine was not delivered on time, please rethink your concept of time and try again.\n'
+        '2. If you find that your time machine is not working, kindly contact our future service workshops on Trappist-1e.'
+        ' They will be accessible anywhere between May 2075 and November 4000 C.E.\n'
+        '3. If you would like a refund, kindly apply for one yesterday and we will have sent it to you immediately.')
                      
 @bot.message_handler(commands=['settings'])
 def settings(message):
