@@ -51,16 +51,16 @@ traders = db.traders
 #         "created_at": random_date(d1, d2)
 #     })
 
-# def skiplimit(page_size, page_num):
-#     # Calculate number of documents to skip
-#     skips = page_size * (page_num - 1)
+def skiplimit(page_size, page_num):
+    # Calculate number of documents to skip
+    skips = page_size * (page_num - 1)
 
-#     # Skip and limit
-#     cursor = sell.find().skip(skips).limit(page_size)
+    # Skip and limit
+    cursor = sell.find().skip(skips).limit(page_size)
 
-#     # Return documents
-#     return cursor
-# cursor = skiplimit(2,1)
+    # Return documents
+    return cursor
+cursor = skiplimit(2,1)
 
 cursor = sell.find({"city":"Алматы","name":"Ethereum"})
 for document in cursor: 
