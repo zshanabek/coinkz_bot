@@ -27,7 +27,7 @@ product_dict = {}
 search_filter_dict = {}
 search_menu = ['Все', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
-date_buttons = ['Сортировать по дате','Сортировать по комиссии','Назад']
+date_buttons = ['1 день', '3 дня', 'Неделя']
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
@@ -308,11 +308,14 @@ def process_sort_step(message):
         if sort_type == 'Назад':
             bazaar(message)
         else:
-            search_filter.sort_type = []        
-            if sort_type == 'Сортировать по дате':
-                search_filter.sort_type.append(("created_at", -1))
-            elif sort_type == 'Сортировать по комиссии':
-                search_filter.sort_type.append(("percent", -1))
+            if sort_type == '1 день':
+                N = 1
+            elif sort_type == '3 дня':
+                N = 3
+            elif sort_type == 'Неделя':
+                N = 7
+            date_N_days_ago = datetime.datetime.now() - datetime.timedelta(days=N)
+            search_filter.sort_type = ({'$gte':date_N_days_ago})
             filter_params = get_filter_params(chat_id)
             pages = get_pages_num(filter_params)
             a = skiplimit(3,1,filter_params, chat_id)   
@@ -348,11 +351,12 @@ def get_filter_params(chat_id):
 
     filter_params["price"]=search_filter.price
     filter_params["percent"]=search_filter.commission
+    filter_params["created_at"] = search_filter.sort_type
     if search_filter.city != "Все":
         filter_params["city"]=search_filter.city
     if search_filter.currency != "Все":
         filter_params["name"]=search_filter.currency
-
+    
     return filter_params
 
 def get_pages_num(filter_params):
@@ -364,7 +368,8 @@ def get_pages_num(filter_params):
 def skiplimit(page_size, page_num, filter_params, chat_id):
     search_filter = search_filter_dict[chat_id]  
     skips = page_size * (page_num - 1)
-    cursor = sell.find(filter_params).skip(skips).limit(page_size).sort(search_filter.sort_type)
+    cursor = sell.find(filter_params).skip(skips).limit(page_size)
+    bot.send_message(chat_id, str(filter_params))
     b = 1
     ads_count = sell.find(filter_params).count()
     a = 'Найдено продавцoв: {0}\n\n'.format(ads_count)
