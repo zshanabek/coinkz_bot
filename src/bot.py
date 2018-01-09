@@ -128,17 +128,6 @@ def choose_city_buy(message):
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
-def process_search_type_process(message):
-    if message.text == 'Найти по цене':
-        find_price_coins(message)
-    elif message.text == 'Найти по названию':
-        find_coins(message) 
-    elif message.text == 'Назад':
-        bazaar(message)
-def find_coins(message):
-    msg = bot.send_message(message.chat.id, "Выберите криптовалюту", reply_markup=create_keyboard(words=['Все']+coin_names+["Назад"],width=1))
-    bot.register_next_step_handler(msg, process_find)
-
 def list_packages(message):
     msg = bot.send_message(message.chat.id, "Выберите пакет", reply_markup=create_keyboard(words=packages,width=1))
     bot.register_next_step_handler(msg, process_package_step)
@@ -604,7 +593,7 @@ def process_percent_step(message):
 def process_exchange_step(message):
     try:
         chat_id = message.chat.id
-        exchange = message.text
+        exchange = message.text.upper()
         product = product_dict[chat_id]
         if not (exchange in exchanges):
             msg = bot.reply_to(message, 'Выберите биржу из списка')
@@ -618,10 +607,11 @@ def process_exchange_step(message):
         
 
 def process_comment_step(message):
-    try:
+    # try:
         chat_id = message.chat.id
         comment = message.text
         product = product_dict[chat_id]
+        username = message.chat.username
         if comment=='Нет':
              product.comment=''
         else:
@@ -629,10 +619,10 @@ def process_comment_step(message):
         buttons = ['Нет', 'Да']
         msg = bot.reply_to(message, 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nКомментарий: '+product.comment, reply_markup=create_keyboard(buttons,2,False,False))
         bot.register_next_step_handler(msg, process_confirmation_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 def process_confirmation_step(message):
-    try:
+    # try:
         chat_id = message.chat.id
         confirm_answer = message.text
         product = product_dict[chat_id]   
@@ -652,8 +642,8 @@ def process_confirmation_step(message):
             bot.send_message(chat_id, 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nКомментарий: '+product.comment, reply_markup = create_keyboard(main_buttons,1,False,False))
         else:
             bot.send_message(chat_id, 'Вы отменили объявление о продаже', reply_markup=create_keyboard(main_buttons,1,False,False))
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def create_keyboard(words=None, width=None, isOneTime=False, isPhone=False):
     keyboard = types.ReplyKeyboardMarkup(one_time_keyboard=isOneTime, row_width=width, resize_keyboard = True)
