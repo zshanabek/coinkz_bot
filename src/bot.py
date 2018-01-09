@@ -278,7 +278,7 @@ def process_find_price(message):
         bot.reply_to(message, 'oooops')
 
 def process_commission_filter_step(message):
-    # try:
+    try:
         chat_id = message.chat.id
         commission = message.text
         search_filter = search_filter_dict[chat_id]    
@@ -297,30 +297,33 @@ def process_commission_filter_step(message):
                     return
             msg = bot.send_message(message.chat.id, 'Выберите сортировку', reply_markup=create_keyboard(words=date_buttons, width=1))
             bot.register_next_step_handler(msg, process_sort_step)
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def process_sort_step(message):
-    chat_id = message.chat.id
-    sort_type = message.text
-    search_filter = search_filter_dict[chat_id]        
-    if sort_type == 'Назад':
-        bazaar(message)
-    else:
-        search_filter.sort_type = []        
-        if sort_type == 'Сортировать по дате':
-            search_filter.sort_type.append(("created_at", -1))
-        elif sort_type == 'Сортировать по комиссии':
-            search_filter.sort_type.append(("percent", -1))
-        filter_params = get_filter_params(chat_id)
-        pages = get_pages_num(filter_params)
-        a = skiplimit(3,1,filter_params, chat_id)   
-        keyboard = types.InlineKeyboardMarkup()
-        for button in range(1,pages+1):
-            callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
-            keyboard.add(callback_button)
-        msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
-        bot.register_next_step_handler(msg, process_sort_step)
+    try:
+        chat_id = message.chat.id
+        sort_type = message.text
+        search_filter = search_filter_dict[chat_id]        
+        if sort_type == 'Назад':
+            bazaar(message)
+        else:
+            search_filter.sort_type = []        
+            if sort_type == 'Сортировать по дате':
+                search_filter.sort_type.append(("created_at", -1))
+            elif sort_type == 'Сортировать по комиссии':
+                search_filter.sort_type.append(("percent", -1))
+            filter_params = get_filter_params(chat_id)
+            pages = get_pages_num(filter_params)
+            a = skiplimit(3,1,filter_params, chat_id)   
+            keyboard = types.InlineKeyboardMarkup()
+            for button in range(1,pages+1):
+                callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
+                keyboard.add(callback_button)
+            msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
+            bot.register_next_step_handler(msg, process_sort_step)  
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
