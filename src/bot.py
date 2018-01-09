@@ -27,7 +27,7 @@ product_dict = {}
 search_filter_dict = {}
 search_menu = ['Все', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
-date_buttons = ['1 день', '3 дня', 'Неделя']
+date_buttons = ['1 день', '3 дня', 'Неделя', 'Назад']
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
@@ -333,7 +333,6 @@ def callback_inline(call):
     if call.message:
         if call.data.isdigit():
             chat_id = call.message.chat.id
-            search_filter = search_filter_dict[chat_id]              
            
             keyboard = types.InlineKeyboardMarkup()
             filter_params = get_filter_params(chat_id) 
@@ -366,10 +365,8 @@ def get_pages_num(filter_params):
     return pages 
 
 def skiplimit(page_size, page_num, filter_params, chat_id):
-    search_filter = search_filter_dict[chat_id]  
     skips = page_size * (page_num - 1)
     cursor = sell.find(filter_params).skip(skips).limit(page_size)
-    bot.send_message(chat_id, str(filter_params))
     b = 1
     ads_count = sell.find(filter_params).count()
     a = 'Найдено продавцoв: {0}\n\n'.format(ads_count)
@@ -410,25 +407,25 @@ def sell_coin(message):
             bot.register_next_step_handler(msg, process_city_step)
             
 def my_ads(message):
-    try:   
+    # try:   
+        chat_id = message.chat.id
         username = message.chat.username
         a = "Ваши объявления\n\n"
         b = 1
         if sell.find({'username':username}).count()==0:
             bot.send_message(message.chat.id, 'У вас пока нету объявлений')
         else:
-            for i in sell.find({'username':username}):
-                a += '{0}. Название валюты: {1}\n'.format(b,i['name'])
-                a += 'Сумма покупки: $'+'{}\n'.format(i['price'])
-                a += 'Процент: {}%\n'.format(i['percent'])
-                a += 'Биржа: {}\n'.format(i['exchange'])                            
-                a += 'Город: {}\n'.format(i['city'])
-                a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y %H:%M"))
-                b+=1
-            msg = bot.send_message(message.chat.id, a, reply_markup=create_keyboard(delete_buttons,1,False,False))   
+            pages = get_pages_num({'username':username})
+            a = skiplimit(3,1,{'username':username}, chat_id)
+            keyboard = types.InlineKeyboardMarkup()
+            for button in range(1,pages+1):
+                callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
+                keyboard.add(callback_button)
+            msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
+            msg = bot.send_message(message.chat.id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))   
             bot.register_next_step_handler(msg, process_my_ads_step)             
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_my_ads_step(message):
     if message.text == 'Мои объявления':
@@ -438,8 +435,9 @@ def process_my_ads_step(message):
     elif message.text == 'Главное меню':
         handle_main_menu_btn(message)
 def remove(message):
-    try:
+    # try:
         username = message.chat.username
+        chat_id = message.chat.id
         ads_number = sell.find({'username':username}).count()
         if ads_number==0:
             bot.send_message(message.chat.id, "У вас пока нету объявлений", reply_markup=create_keyboard(delete_buttons,1,False,False)) 
@@ -447,10 +445,24 @@ def remove(message):
             numbers = range(1,ads_number+1)
             str_numbers = [str(i) for i in numbers]
             str_numbers.append('Назад')
-            msg = bot.send_message(message.chat.id, "Какое по счету объявление вы хотите удалить?", reply_markup=create_keyboard(str_numbers,1,False,False))       
+            
+            msg = bot.send_message(message.chat.id, "Какое по счету объявление вы хотите удалить?", reply_markup=create_keyboard(str_numbers,1,False,False))
+            a = "Ваши объявления\n\n"
+            b = 1
+            if sell.find({'username':username}).count()==0:
+                bot.send_message(message.chat.id, 'У вас пока нету объявлений')
+            else:
+                pages = get_pages_num({'username':username})
+                a = skiplimit(3,1,{'username':username}, chat_id)
+                keyboard = types.InlineKeyboardMarkup()
+                for button in range(1,pages+1):
+                    callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
+                    keyboard.add(callback_button)
+                msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
+                msg = bot.send_message(message.chat.id, 'Что вы хотите удалить?')          
             bot.register_next_step_handler(msg, process_remove_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 def process_remove_step(message):
     try:
         if message.text == 'Назад':
@@ -471,7 +483,7 @@ def process_remove_step(message):
 
             sell.delete_one({'_id': target})
             msg =bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1))
-            remove(message)
+            bot.register_next_step_handler(msg, remove)      
     except Exception as e:
         bot.reply_to(message, 'oooops')   
 
@@ -615,7 +627,7 @@ def process_comment_step(message):
         else:
             product.comment = comment
         buttons = ['Нет', 'Да']
-        msg = bot.reply_to(message, 'Подтвердите объявление о продаже', reply_markup=create_keyboard(buttons,2,False,False))
+        msg = bot.reply_to(message, 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nКомментарий: '+product.comment, reply_markup=create_keyboard(buttons,2,False,False))
         bot.register_next_step_handler(msg, process_confirmation_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
