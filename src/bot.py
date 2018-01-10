@@ -255,7 +255,12 @@ def process_find_price(message):
                 if(p[0].isdigit() and p[1].isdigit()):
                     n1 = int(p[0])
                     n2 = int(p[1])
-                    search_filter.price = {"$gte": n1, "$lte": n2}
+                    if n1<n2:
+                        msg = bot.reply_to(message, 'Введите цену от большего к меньшему')
+                        bot.register_next_step_handler(msg, process_find_price)
+                        return
+                    else:
+                        search_filter.price = {"$gte": n1, "$lte": n2}
                 else:
                     msg = bot.reply_to(message, 'Введите ценовой диапозон')
                     bot.register_next_step_handler(msg, process_find_price)
