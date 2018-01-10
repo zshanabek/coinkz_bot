@@ -2,16 +2,13 @@ import config
 import time
 import telebot
 from telebot import types
-import pprint
 import pdb
-import pymongo
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import logging
 from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
 import datetime
-import inspect
 import math
 silver_price = [LabeledPrice(label='Silver', amount=200000)]
 gold_price = [LabeledPrice(label='Gold', amount=500000)]
@@ -34,12 +31,10 @@ cities = ['Алматы','Астана','Шымкент','Караганда','�
 
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
-main_buttons = ['Базар','Настройки','Условия использования']
-
-packages = ['Silver', 'Gold', 'Platinum','Узнать свой пакет','Отменить подписку','Назад']
-search_types_buttons = ['Найти по цене', 'Найти по названию','Назад']
-delete_buttons = ['Удалить', 'Мои объявления','Главное меню']
-bazaar_buttons = ['Купить','Продать','Мои объявления','Главное меню']
+main_buttons = ['Базар', 'Настройки', 'Условия использования']
+packages = ['Silver', 'Gold', 'Platinum', 'Узнать свой пакет', 'Отменить подписку', 'Назад']
+delete_buttons = ['Удалить', 'Мои объявления', 'Главное меню']
+bazaar_buttons = ['Купить', 'Продать', 'Мои объявления', 'Главное меню']
 settings_buttons = ['Пакеты']
 class Product:
     def __init__(self, city):
@@ -360,7 +355,7 @@ def get_pages_num(filter_params):
     ads_count = sell.find(filter_params).count()
     pages = math.ceil(ads_count/3.0)
 
-    return pages 
+    return pages
 
 def skiplimit(page_size, page_num, filter_params, chat_id):
     skips = page_size * (page_num - 1)
@@ -375,7 +370,7 @@ def skiplimit(page_size, page_num, filter_params, chat_id):
         a += 'Биржа: {}\n'.format(i['exchange'])                       
         a += 'Город: {}\n'.format(i['city'])
         a += 'Владелец: @{}\n'.format(i['username'])   
-        a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))                
+        a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))
         b+=1
     return a
 
@@ -405,7 +400,7 @@ def sell_coin(message):
             bot.register_next_step_handler(msg, process_city_step)
             
 def my_ads(message):
-    # try:   
+    try:   
         chat_id = message.chat.id
         username = message.chat.username
         a = "Ваши объявления\n\n"
@@ -422,8 +417,8 @@ def my_ads(message):
             msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
             msg = bot.send_message(message.chat.id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))   
             bot.register_next_step_handler(msg, process_my_ads_step)             
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def process_my_ads_step(message):
     if message.text == 'Мои объявления':
