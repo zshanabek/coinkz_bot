@@ -327,23 +327,36 @@ def process_sort_step(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
-    if call.message:
-        chat_id = call.message.chat.id
-        search_filter = search_filter_dict[chat_id]
-        if call.data=='back':
-            search_filter.current_page-=1
-        elif call.data == 'forward':
-            search_filter.current_page+=1
-        keyboard = types.InlineKeyboardMarkup()
-        filter_params = get_filter_params(chat_id)
-        pages = get_pages_num(filter_params)
-        a = skiplimit(5,search_filter.current_page,filter_params,chat_id)
-        keyboard = types.InlineKeyboardMarkup(row_width = 2)
-        callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="back")
-        callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
-        keyboard.add(callback_bt1, callback_bt2)
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
-
+    try:
+        if call.message:
+            chat_id = call.message.chat.id
+            search_filter = search_filter_dict[chat_id]
+            if call.data == 'back' or call.data == 'forward':
+                if call.data=='back':
+                    search_filter.current_page-=1
+                elif call.data == 'forward':
+                    search_filter.current_page+=1
+                filter_params = get_filter_params(chat_id)
+                pages = get_pages_num(filter_params)
+                a = skiplimit(5,search_filter.current_page,filter_params,chat_id)
+                keyboard = types.InlineKeyboardMarkup(row_width = 2)
+                callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="back")
+                callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
+                keyboard.add(callback_bt1, callback_bt2)
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
+            else:
+                if call.data =='-1':
+                    search_filter.current_page-=1
+                elif call.data == '1':
+                    search_filter.current_page-=1
+                a = skiplimit(5,search_filter.current_page,{'username': call.message.chat.username},chat_id)
+                keyboard = types.InlineKeyboardMarkup(row_width = 2)
+                callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="-1")
+                callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
+                keyboard.add(callback_bt1, callback_bt2)
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def get_filter_params(chat_id):
     search_filter = search_filter_dict[chat_id]
@@ -409,7 +422,7 @@ def sell_coin(message):
             bot.register_next_step_handler(msg, process_city_step)
 
 def my_ads(message):
-    try:
+    # try:
         chat_id = message.chat.id
         username = message.chat.username
         a = "Ваши объявления\n\n"
@@ -417,17 +430,19 @@ def my_ads(message):
         if sell.find({'username':username}).count()==0:
             bot.send_message(message.chat.id, 'У вас пока нету объявлений')
         else:
+            search_filter = SearchFilter('')
+            search_filter.current_page = 1
             pages = get_pages_num({'username':username})
             a = skiplimit(5,1,{'username':username}, chat_id)
-            keyboard = types.InlineKeyboardMarkup()
-            for button in range(1,pages+1):
-                callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
-                keyboard.add(callback_button)
+            keyboard = types.InlineKeyboardMarkup(row_width = 2)
+            callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="-1")
+            callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
+            keyboard.add(callback_bt1, callback_bt2)
             msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
             msg = bot.send_message(message.chat.id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))
             bot.register_next_step_handler(msg, process_my_ads_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_my_ads_step(message):
     if message.text == 'Мои объявления':
@@ -456,10 +471,12 @@ def remove(message):
             else:
                 pages = get_pages_num({'username':username})
                 a = skiplimit(5,1,{'username':username}, chat_id)
-                keyboard = types.InlineKeyboardMarkup()
-                for button in range(1,pages+1):
-                    callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
-                    keyboard.add(callback_button)
+
+                keyboard = types.InlineKeyboardMarkup(row_width = 2)
+                callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="back")
+                callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
+                keyboard.add(callback_bt1, callback_bt2)
+
                 msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
                 msg = bot.send_message(message.chat.id, 'Что вы хотите удалить?')
                 bot.register_next_step_handler(msg, process_remove_step)
