@@ -53,6 +53,7 @@ class SearchFilter:
         self.price = None
         self.commission = None
         self.sort_type = None
+        self.current_page = None
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -71,11 +72,11 @@ def handle_message(message):
     if message.text=='Базар':
         bazaar(message)
     elif message.text=='Настройки':
-        settings(message)  
+        settings(message)
     elif message.text=='Условия использования':
         command_terms(message)
     elif message.text == "Silver":
-        silver_invoice(message)        
+        silver_invoice(message)
     elif message.text == "Gold":
         gold_invoice(message)
     elif message.text == "Platinum":
@@ -86,12 +87,12 @@ def handle_message(message):
         determine_package(message)
     elif message.text == "Главное меню":
         handle_main_menu_btn(message)
-    
+
 
 def bazaar(message):
     msg = bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(bazaar_buttons,1,False,False))
     bot.register_next_step_handler(msg, process_bazaar_step)
-    
+
 def process_bazaar_step(message):
     if message.text =='Купить':
         msg = bot.send_message(message.chat.id, 'Выберите город', reply_markup=create_keyboard(["Все"]+cities+['Назад'],1,False,False))
@@ -114,9 +115,9 @@ def choose_city_buy(message):
                 msg = bot.reply_to(message, 'Выберите город из списка')
                 bot.register_next_step_handler(msg, choose_city_buy)
                 return
-            search_filter = SearchFilter(city)        
-            
-            search_filter_dict[chat_id] = search_filter        
+            search_filter = SearchFilter(city)
+
+            search_filter_dict[chat_id] = search_filter
             search_filter.city = city
             msg = bot.reply_to(message, 'Выберите криптовалюту', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
             bot.register_next_step_handler(msg, process_name_step_buy)
@@ -129,7 +130,7 @@ def list_packages(message):
 
 def process_package_step(message):
     if message.text == "Silver":
-        silver_invoice(message)        
+        silver_invoice(message)
     elif message.text == "Gold":
         gold_invoice(message)
     elif message.text == "Platinum":
@@ -150,7 +151,7 @@ def determine_package(message):
     a = traders.find_one({'username':message.chat.username})
     package_id = a['is_paid']
     if (package_id == False or package_id==None):
-        msg = bot.send_message(message.chat.id, "Вы не активировали ни один пакет")            
+        msg = bot.send_message(message.chat.id, "Вы не активировали ни один пакет")
     else:
         if package_id == 1:
             package_name = silver
@@ -158,33 +159,33 @@ def determine_package(message):
             package_name = gold
         elif package_id == 3:
             package_name = platinum
-        msg = bot.send_message(message.chat.id, "У вас пакет {0}".format(package_name))  
+        msg = bot.send_message(message.chat.id, "У вас пакет {0}".format(package_name))
     bot.register_next_step_handler(msg, process_package_step)
 def process_package_delete_confirmation_step(message):
     if message.text == "Да":
-        traders.update_one({'username':message.chat.username},{'$set':{'is_paid':False}}) 
-        msg = bot.send_message(message.chat.id, "Я отменил подписку") 
+        traders.update_one({'username':message.chat.username},{'$set':{'is_paid':False}})
+        msg = bot.send_message(message.chat.id, "Я отменил подписку")
         list_packages(message)
     elif message.text == "Нет":
-        list_packages(message)        
-        
+        list_packages(message)
+
 def silver_invoice(message):
-    bot.send_invoice(message.chat.id, 
+    bot.send_invoice(message.chat.id,
         title='Пакет Silver',
         description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Silver пакет даёт возможность размещения 10 объявлений''',
         provider_token=config.provider_token,
         currency='KZT',
         photo_url='http://livingalegacyinc.com/wp-content/uploads/2016/09/silver.png',
-        photo_height=300,  
+        photo_height=300,
         photo_width=300,
         photo_size=300,
-        is_flexible=False,  
+        is_flexible=False,
         prices=silver_price,
         start_parameter='coinkz-silver',
         invoice_payload='Silver')
-    
+
 def gold_invoice(message):
-    bot.send_invoice(message.chat.id, 
+    bot.send_invoice(message.chat.id,
         title='Пакет Gold',
         description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Gold пакет даёт возможность размещения 30 объявлений''',
         provider_token=config.provider_token,
@@ -199,7 +200,7 @@ def gold_invoice(message):
         invoice_payload='Gold')
 
 def platinum_invoice(message):
-    bot.send_invoice(message.chat.id, 
+    bot.send_invoice(message.chat.id,
         title='Пакет Platinum',
         description='''Хочешь публиковать больше объявлений по продажам криптовалюты? Platinum пакет даёт возможность размеще до 50 объявлений''',
         provider_token=config.provider_token,
@@ -208,7 +209,7 @@ def platinum_invoice(message):
         photo_height=300,  # !=0/None or picture won't be shown
         photo_width=280,
         photo_size=300,
-        is_flexible=False,  
+        is_flexible=False,
         prices=platinum_price,
         start_parameter='coinkz-platinum',
         invoice_payload='Platinum')
@@ -239,14 +240,14 @@ def process_find_price(message):
     try:
         chat_id = message.chat.id
         price = message.text
-        search_filter = search_filter_dict[chat_id]    
+        search_filter = search_filter_dict[chat_id]
         if price == 'Назад':
             bazaar(message)
         else:
             if price=='Все':
                search_filter.price = {"$gte":0}
             else:
-                p = price.split(" ")
+                p = price.split("-")
                 if len(p)==1:
                     msg = bot.reply_to(message, 'Введите два числа')
                     bot.register_next_step_handler(msg, process_find_price)
@@ -264,7 +265,7 @@ def process_find_price(message):
                     msg = bot.reply_to(message, 'Введите ценовой диапозон')
                     bot.register_next_step_handler(msg, process_find_price)
                     return
-            
+
             msg = bot.send_message(message.chat.id, 'Какую комиссию вы хотите найти? Если для вас это не важно нажмите "Все"', reply_markup=create_keyboard(words=search_menu,width=1))
             bot.register_next_step_handler(msg, process_commission_filter_step)
     except Exception as e:
@@ -274,7 +275,7 @@ def process_commission_filter_step(message):
     try:
         chat_id = message.chat.id
         commission = message.text
-        search_filter = search_filter_dict[chat_id]    
+        search_filter = search_filter_dict[chat_id]
         if commission == 'Назад':
             bazaar(message)
         else:
@@ -297,7 +298,7 @@ def process_sort_step(message):
     try:
         chat_id = message.chat.id
         sort_type = message.text
-        search_filter = search_filter_dict[chat_id]        
+        search_filter = search_filter_dict[chat_id]
         if sort_type == 'Назад':
             bazaar(message)
         else:
@@ -311,34 +312,41 @@ def process_sort_step(message):
             search_filter.sort_type = ({'$gte':date_N_days_ago})
             filter_params = get_filter_params(chat_id)
             pages = get_pages_num(filter_params)
-            a = skiplimit(3,1,filter_params, chat_id)   
-            keyboard = types.InlineKeyboardMarkup()
-            for button in range(1,pages+1):
-                callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
-                keyboard.add(callback_button)
+            a = skiplimit(5,1,filter_params, chat_id)
+            search_filter.current_page = 1
+            keyboard = types.InlineKeyboardMarkup(row_width = 2)
+            callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="back")
+            callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
+            keyboard.add(callback_bt1, callback_bt2)
             msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
-            bot.register_next_step_handler(msg, process_sort_step)  
+
+
+            bot.register_next_step_handler(msg, process_sort_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.message:
-        if call.data.isdigit():
-            chat_id = call.message.chat.id
-           
-            keyboard = types.InlineKeyboardMarkup()
-            filter_params = get_filter_params(chat_id) 
-            pages = get_pages_num(filter_params)                       
-            a = skiplimit(3,int(call.data),filter_params,chat_id)
-            for button in range(1,pages+1):
-                callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
-                keyboard.add(callback_button)
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
+        chat_id = call.message.chat.id
+        search_filter = search_filter_dict[chat_id]
+        if call.data=='back':
+            search_filter.current_page-=1
+        elif call.data == 'forward':
+            search_filter.current_page+=1
+        keyboard = types.InlineKeyboardMarkup()
+        filter_params = get_filter_params(chat_id)
+        pages = get_pages_num(filter_params)
+        a = skiplimit(5,search_filter.current_page,filter_params,chat_id)
+        keyboard = types.InlineKeyboardMarkup(row_width = 2)
+        callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="back")
+        callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
+        keyboard.add(callback_bt1, callback_bt2)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
 
 
 def get_filter_params(chat_id):
-    search_filter = search_filter_dict[chat_id]  
+    search_filter = search_filter_dict[chat_id]
     filter_params = {}
 
     filter_params["price"]=search_filter.price
@@ -348,12 +356,12 @@ def get_filter_params(chat_id):
         filter_params["city"]=search_filter.city
     if search_filter.currency != "Все":
         filter_params["name"]=search_filter.currency
-    
+
     return filter_params
 
 def get_pages_num(filter_params):
     ads_count = sell.find(filter_params).count()
-    pages = math.ceil(ads_count/3.0)
+    pages = math.ceil(ads_count/5.0)
 
     return pages
 
@@ -362,14 +370,15 @@ def skiplimit(page_size, page_num, filter_params, chat_id):
     cursor = sell.find(filter_params).skip(skips).limit(page_size)
     b = 1
     ads_count = sell.find(filter_params).count()
+
     a = 'Найдено продавцoв: {0}\n\n'.format(ads_count)
     for i in cursor:
         a += '{0}. Криптовалюта: {1}\n'.format(b, i['name'])
         a += 'Сумма покупки: $'+'{}\n'.format(i['price'])
         a += 'Комиссия: {}%\n'.format(i['percent'])
-        a += 'Биржа: {}\n'.format(i['exchange'])                       
+        a += 'Биржа: {}\n'.format(i['exchange'])
         a += 'Город: {}\n'.format(i['city'])
-        a += 'Владелец: @{}\n'.format(i['username'])   
+        a += 'Владелец: @{}\n'.format(i['username'])
         a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))
         b+=1
     return a
@@ -391,16 +400,16 @@ def sell_coin(message):
             list_packages(message)
         elif (sell.find({'username':current_username}).count()==30 and t['is_paid']==2):
             msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (10 объявлений). Купите один из пакетов чтобы публиковать больше объявлений")
-            list_packages(message)            
+            list_packages(message)
         elif (sell.find({'username':current_username}).count()==50 and t['is_paid']==3):
             msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
-        else: 
+        else:
             ct = cities+["Назад"]
             msg = bot.reply_to(message, 'Сперва, выберите город из списка', reply_markup=create_keyboard(ct,3,True,False))
             bot.register_next_step_handler(msg, process_city_step)
-            
+
 def my_ads(message):
-    try:   
+    try:
         chat_id = message.chat.id
         username = message.chat.username
         a = "Ваши объявления\n\n"
@@ -409,14 +418,14 @@ def my_ads(message):
             bot.send_message(message.chat.id, 'У вас пока нету объявлений')
         else:
             pages = get_pages_num({'username':username})
-            a = skiplimit(3,1,{'username':username}, chat_id)
+            a = skiplimit(5,1,{'username':username}, chat_id)
             keyboard = types.InlineKeyboardMarkup()
             for button in range(1,pages+1):
                 callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
                 keyboard.add(callback_button)
             msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
-            msg = bot.send_message(message.chat.id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))   
-            bot.register_next_step_handler(msg, process_my_ads_step)             
+            msg = bot.send_message(message.chat.id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))
+            bot.register_next_step_handler(msg, process_my_ads_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -433,12 +442,12 @@ def remove(message):
         chat_id = message.chat.id
         ads_number = sell.find({'username':username}).count()
         if ads_number==0:
-            bot.send_message(message.chat.id, "У вас пока нету объявлений", reply_markup=create_keyboard(delete_buttons,1,False,False)) 
+            bot.send_message(message.chat.id, "У вас пока нету объявлений", reply_markup=create_keyboard(delete_buttons,1,False,False))
         else:
             numbers = range(1,ads_number+1)
             str_numbers = [str(i) for i in numbers]
             str_numbers.append('Назад')
-            
+
             msg = bot.send_message(message.chat.id, "Какое по счету объявление вы хотите удалить?", reply_markup=create_keyboard(str_numbers,1,False,False))
             a = "Ваши объявления\n\n"
             b = 1
@@ -446,14 +455,14 @@ def remove(message):
                 bot.send_message(message.chat.id, 'У вас пока нету объявлений')
             else:
                 pages = get_pages_num({'username':username})
-                a = skiplimit(3,1,{'username':username}, chat_id)
+                a = skiplimit(5,1,{'username':username}, chat_id)
                 keyboard = types.InlineKeyboardMarkup()
                 for button in range(1,pages+1):
                     callback_button = types.InlineKeyboardButton(text=str(button), callback_data=str(button))
                     keyboard.add(callback_button)
                 msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
-                msg = bot.send_message(message.chat.id, 'Что вы хотите удалить?')          
-            bot.register_next_step_handler(msg, process_remove_step)
+                msg = bot.send_message(message.chat.id, 'Что вы хотите удалить?')
+                bot.register_next_step_handler(msg, process_remove_step)
     # except Exception as e:
     #     bot.reply_to(message, 'oooops')
 def process_remove_step(message):
@@ -461,7 +470,7 @@ def process_remove_step(message):
         if message.text == 'Назад':
             my_ads(message)
         else:
-            username = message.chat.username    
+            username = message.chat.username
             chat_id = message.chat.id
             seq_num = int(message.text)
             seq_num-=1
@@ -476,9 +485,9 @@ def process_remove_step(message):
 
             sell.delete_one({'_id': target})
             msg =bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1))
-            bot.register_next_step_handler(msg, remove)      
+            bot.register_next_step_handler(msg, remove)
     except Exception as e:
-        bot.reply_to(message, 'oooops')   
+        bot.reply_to(message, 'oooops')
 
 
 def process_city_step(message):
@@ -492,10 +501,10 @@ def process_city_step(message):
                 msg = bot.reply_to(message, 'Выберите город из списка')
                 bot.register_next_step_handler(msg, process_city_step)
                 return
-            product = Product(city)        
-            
-            product_dict[chat_id] = product        
-            
+            product = Product(city)
+
+            product_dict[chat_id] = product
+
             product.city = city
             markup = types.ReplyKeyboardMarkup(row_width=2)
             itembtn1 = types.KeyboardButton('Нет')
@@ -508,7 +517,7 @@ def process_city_step(message):
 
 def process_phone_step(message):
     chat_id = message.chat.id
-    product = product_dict[chat_id]        
+    product = product_dict[chat_id]
     if message.contact:
         product.contact = message.contact.phone_number
     else:
@@ -516,7 +525,7 @@ def process_phone_step(message):
 
     msg = bot.reply_to(message, 'Теперь выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True,False))
     bot.register_next_step_handler(msg, process_name_step)
-    
+
 def process_name_step_buy(message):
     try:
         chat_id = message.chat.id
@@ -532,12 +541,12 @@ def process_name_step_buy(message):
             search_filter = search_filter_dict[chat_id]
             search_filter.currency = currency
 
-            msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный пробелом, от меньшего к большому. Например: 2000 5000. Чтобы искать все цены нажмите на кнопку 'Все'",reply_markup=create_keyboard(words=search_menu,width=1))
+            msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный тире, от меньшего к большому. Например: 2000-5000. Чтобы искать все цены нажмите на кнопку 'Все'",reply_markup=create_keyboard(words=search_menu,width=1))
 
             bot.register_next_step_handler(msg, process_find_price)
     except Exception as e:
         bot.reply_to(message, 'oooops')
-       
+
 def process_name_step(message):
     try:
         chat_id = message.chat.id
@@ -607,8 +616,8 @@ def process_exchange_step(message):
         msg = bot.reply_to(message, 'Есть ли у вас комментарии? Если нет, то можете оставить пустым', reply_markup=create_keyboard(['Нет'],1,False,False))
         bot.register_next_step_handler(msg, process_comment_step)
     except Exception as e:
-        bot.reply_to(message, 'oooops') 
-        
+        bot.reply_to(message, 'oooops')
+
 
 def process_comment_step(message):
     try:
@@ -629,17 +638,17 @@ def process_confirmation_step(message):
     try:
         chat_id = message.chat.id
         confirm_answer = message.text
-        product = product_dict[chat_id]   
-        username = message.chat.username     
+        product = product_dict[chat_id]
+        username = message.chat.username
         if confirm_answer == 'Да':
             sell.insert_one({
                 'name': product.name,
                 'price': int(product.price),
                 'percent': int(product.percent),
-                'exchange': product.exchange,                
+                'exchange': product.exchange,
                 'city': product.city,
                 'username': username,
-                'comment': product.comment,      
+                'comment': product.comment,
                 'phone_number': product.contact,
                 "created_at": datetime.datetime.utcnow()
             })
@@ -667,18 +676,18 @@ def command_terms(message):
         '2. If you find that your time machine is not working, kindly contact our future service workshops on Trappist-1e.'
         ' They will be accessible anywhere between May 2075 and November 4000 C.E.\n'
         '3. If you would like a refund, kindly apply for one yesterday and we will have sent it to you immediately.')
-                     
+
 @bot.message_handler(commands=['settings'])
 def settings(message):
     msg = bot.send_message(message.chat.id, 'Выберите настройки', reply_markup=create_keyboard(settings_buttons+['Главное меню'],1,False,False))
     bot.register_next_step_handler(msg, process_settings_step)
-    
+
 def process_settings_step(message):
     if message.text == 'Пакеты':
         list_packages(message)
     elif message.text=='Главное меню':
         handle_main_menu_btn(message)
-        
+
 
 @bot.message_handler(regexp="/Главное меню/")
 def handle_main_menu_btn(message):
