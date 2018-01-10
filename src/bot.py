@@ -241,7 +241,7 @@ def got_payment(message):
     bot.register_next_step_handler(msg, process_package_step)
 
 def process_find_price(message):
-    try:
+    # try:
         chat_id = message.chat.id
         price = message.text
         search_filter = search_filter_dict[chat_id]    
@@ -252,10 +252,14 @@ def process_find_price(message):
                search_filter.price = {"$gte":0}
             else:
                 p = price.split(" ")
-                if(p[0].isdigit() and p[1].isdigit()):
+                if len(p)==1:
+                    msg = bot.reply_to(message, 'Введите два числа')
+                    bot.register_next_step_handler(msg, process_find_price)
+                    return
+                elif(p[0].isdigit() and p[1].isdigit()):
                     n1 = int(p[0])
                     n2 = int(p[1])
-                    if n1<n2:
+                    if n1>n2:
                         msg = bot.reply_to(message, 'Введите цену от большего к меньшему')
                         bot.register_next_step_handler(msg, process_find_price)
                         return
@@ -268,8 +272,8 @@ def process_find_price(message):
             
             msg = bot.send_message(message.chat.id, 'Какую комиссию вы хотите найти? Если для вас это не важно нажмите "Все"', reply_markup=create_keyboard(words=search_menu,width=1))
             bot.register_next_step_handler(msg, process_commission_filter_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_commission_filter_step(message):
     try:
