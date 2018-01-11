@@ -268,7 +268,7 @@ def process_find_price(message):
                     bot.register_next_step_handler(msg, process_find_price)
                     return
 
-            msg = bot.send_message(message.chat.id, 'Какую комиссию вы хотите найти? Если для вас это не важно нажмите "Все"', reply_markup=create_keyboard(words=search_menu,width=1))
+            msg = bot.send_message(message.chat.id, '''Какую комиссию вы хотите найти? Наберите цифрами от 0 до 100. Если для вас это не важно нажмите "Все"''', reply_markup=create_keyboard(words=search_menu,width=1))
             bot.register_next_step_handler(msg, process_commission_filter_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -321,8 +321,8 @@ def process_sort_step(message):
             keyboard = types.InlineKeyboardMarkup(row_width = 2)
             callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
             keyboard.add(callback_bt2)
-            msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
-
+            msg = bot.send_message(chat_id,a, reply_markup=keyboard)
+            bot.send_message(chat_id, str(filter_params))
 
             bot.register_next_step_handler(msg, process_sort_step)
     # except Exception as e:
@@ -384,7 +384,7 @@ def get_filter_params(chat_id):
     filter_params["created_at"] = search_filter.sort_type
     if search_filter.city != "Все":
         filter_params["city"]=search_filter.city
-    if search_filter.currency != "Все":
+    if search_filter.currency != "ВСЕ":
         filter_params["name"]=search_filter.currency
 
     return filter_params
