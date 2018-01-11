@@ -97,7 +97,9 @@ def bazaar(message):
 
 def process_bazaar_step(message):
     if message.text =='Купить':
-        msg = bot.send_message(message.chat.id, 'Выберите город', reply_markup=create_keyboard(["Все"]+cities+['Назад'],1,False,False))
+        msg = bot.send_message(message.chat.id, '''Отлично! Сейчас я задам несколько вопросов. Ответы на них буду составлять параметры поиска в базе данных объявлений. Поехали!\n
+        Выберите город из списка.
+        ''', reply_markup=create_keyboard(["Все"]+cities+['Назад'],1,False,False))
         bot.register_next_step_handler(msg, choose_city_buy)
     elif message.text == 'Продать':
         sell_coin(message)
@@ -411,10 +413,10 @@ def skiplimit(page_size, page_num, filter_params, chat_id, total_pages):
             a += 'Биржа: {}\n'.format(i['exchange'])
             a += 'Город: {}\n'.format(i['city'])
             a += 'Владелец: @{}\n'.format(i['username'])
+            a += 'Номер телефона: {}\n'.format(i['phone_number'])            
             a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))
             b+=1
     return a
-
 
 @bot.message_handler(commands=['sell'])
 def sell_coin(message):
@@ -437,7 +439,7 @@ def sell_coin(message):
             msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
         else:
             ct = cities+["Назад"]
-            msg = bot.reply_to(message, 'Сперва, выберите город из списка', reply_markup=create_keyboard(ct,3,True,False))
+            msg = bot.reply_to(message, '''Отлично! Сейчас я задам несколько вопросов, касающиеся вашего объявления о продаже криптовалюты. Ответьте на них пожалуйста.\n Сперва, выберите город из списка''', reply_markup=create_keyboard(ct,3,True,False))
             bot.register_next_step_handler(msg, process_city_step)
 
 def my_ads(message):
