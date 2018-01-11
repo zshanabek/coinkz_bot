@@ -295,7 +295,7 @@ def process_commission_filter_step(message):
         bot.reply_to(message, 'oooops')
 
 def process_sort_step(message):
-    try:
+    # try:
         chat_id = message.chat.id
         sort_type = message.text
         search_filter = search_filter_dict[chat_id]
@@ -312,22 +312,21 @@ def process_sort_step(message):
             search_filter.sort_type = ({'$gte':date_N_days_ago})
             filter_params = get_filter_params(chat_id)
             pages = get_pages_num(filter_params)
-            a = skiplimit(5,1,filter_params, chat_id)
+            a = skiplimit(5,1,filter_params, chat_id,pages)
             search_filter.current_page = 1
             keyboard = types.InlineKeyboardMarkup(row_width = 2)
-            callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="back")
             callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
-            keyboard.add(callback_bt1, callback_bt2)
+            keyboard.add(callback_bt2)
             msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
 
 
             bot.register_next_step_handler(msg, process_sort_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
-    try:
+    # try:
         if call.message:
             chat_id = call.message.chat.id
             search_filter = search_filter_dict[chat_id]
@@ -337,26 +336,40 @@ def callback_inline(call):
                 elif call.data == 'forward':
                     search_filter.current_page+=1
                 filter_params = get_filter_params(chat_id)
-                pages = get_pages_num(filter_params)
-                a = skiplimit(5,search_filter.current_page,filter_params,chat_id)
+                pages = get_pages_num(filter_params)                
+                a = skiplimit(5,search_filter.current_page,filter_params,chat_id,pages)
                 keyboard = types.InlineKeyboardMarkup(row_width = 2)
                 callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="back")
                 callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
-                keyboard.add(callback_bt1, callback_bt2)
+
+                if search_filter.current_page == 1:
+                    keyboard.add(callback_bt2)
+                elif search_filter.current_page == pages:
+                    keyboard.add(callback_bt1)
+                else:
+                    keyboard.add(callback_bt1, callback_bt2)
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
             else:
+                pages = get_pages_num({'username': call.message.chat.username})                
                 if call.data =='-1':
                     search_filter.current_page-=1
                 elif call.data == '1':
-                    search_filter.current_page-=1
-                a = skiplimit(5,search_filter.current_page,{'username': call.message.chat.username},chat_id)
+                    search_filter.current_page+=1
+                a = skiplimit(5,search_filter.current_page,{'username': call.message.chat.username},chat_id,pages)
                 keyboard = types.InlineKeyboardMarkup(row_width = 2)
                 callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="-1")
                 callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
-                keyboard.add(callback_bt1, callback_bt2)
+
+
+                if search_filter.current_page == 1:
+                    keyboard.add(callback_bt2)
+                elif search_filter.current_page == pages:
+                    keyboard.add(callback_bt1)
+                else:
+                    keyboard.add(callback_bt1, callback_bt2)
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(call.message, 'oooops')
 
 def get_filter_params(chat_id):
     search_filter = search_filter_dict[chat_id]
@@ -378,22 +391,23 @@ def get_pages_num(filter_params):
 
     return pages
 
-def skiplimit(page_size, page_num, filter_params, chat_id):
+def skiplimit(page_size, page_num, filter_params, chat_id, total_pages):
     skips = page_size * (page_num - 1)
     cursor = sell.find(filter_params).skip(skips).limit(page_size)
-    b = 1
+   
     ads_count = sell.find(filter_params).count()
-
+    b = page_size * page_num - page_size +1
     a = 'Найдено продавцoв: {0}\n\n'.format(ads_count)
     for i in cursor:
-        a += '{0}. Криптовалюта: {1}\n'.format(b, i['name'])
-        a += 'Сумма покупки: $'+'{}\n'.format(i['price'])
-        a += 'Комиссия: {}%\n'.format(i['percent'])
-        a += 'Биржа: {}\n'.format(i['exchange'])
-        a += 'Город: {}\n'.format(i['city'])
-        a += 'Владелец: @{}\n'.format(i['username'])
-        a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))
-        b+=1
+        while (b < page_size*page_num+1):
+            a += '{0}. Криптовалюта: {1}\n'.format(b, i['name'])
+            a += 'Сумма покупки: $'+'{}\n'.format(i['price'])
+            a += 'Комиссия: {}%\n'.format(i['percent'])
+            a += 'Биржа: {}\n'.format(i['exchange'])
+            a += 'Город: {}\n'.format(i['city'])
+            a += 'Владелец: @{}\n'.format(i['username'])
+            a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))
+            b+=1
     return a
 
 
@@ -431,13 +445,13 @@ def my_ads(message):
             bot.send_message(message.chat.id, 'У вас пока нету объявлений')
         else:
             search_filter = SearchFilter('')
+            search_filter_dict[chat_id] = search_filter            
             search_filter.current_page = 1
             pages = get_pages_num({'username':username})
-            a = skiplimit(5,1,{'username':username}, chat_id)
+            a = skiplimit(5,1,{'username':username}, chat_id,pages)
             keyboard = types.InlineKeyboardMarkup(row_width = 2)
-            callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="-1")
             callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
-            keyboard.add(callback_bt1, callback_bt2)
+            keyboard.add(callback_bt2)
             msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
             msg = bot.send_message(message.chat.id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))
             bot.register_next_step_handler(msg, process_my_ads_step)
@@ -470,12 +484,18 @@ def remove(message):
                 bot.send_message(message.chat.id, 'У вас пока нету объявлений')
             else:
                 pages = get_pages_num({'username':username})
-                a = skiplimit(5,1,{'username':username}, chat_id)
+                a = skiplimit(5,1,{'username':username}, chat_id,pages)
 
                 keyboard = types.InlineKeyboardMarkup(row_width = 2)
-                callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="back")
-                callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
-                keyboard.add(callback_bt1, callback_bt2)
+                callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="-1")
+                callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
+                search_filter = search_filter_dict[chat_id]
+                if search_filter.current_page == 1:
+                    keyboard.add(callback_bt2)
+                elif search_filter.current_page == pages:
+                    keyboard.add(callback_bt1)
+                else:
+                    keyboard.add(callback_bt1, callback_bt2)
 
                 msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
                 msg = bot.send_message(message.chat.id, 'Что вы хотите удалить?')
