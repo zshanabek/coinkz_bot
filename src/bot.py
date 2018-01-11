@@ -27,6 +27,8 @@ client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.c
 date_buttons = ['1 день', '3 дня', 'Неделя', 'За все время','Назад']
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
 
+coin_names1 = ['BITCOIN', 'ETHEREUM', 'LITECOIN', 'NEO', 'NEM', 'STRATIS', 'BITSHARES', 'STELLAR', 'RIPPLE', 'DASH', 'LISK', 'WAVES', 'ETHEREUM CLASSIC', 'MONERO', 'ZCASH']
+
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
 
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
@@ -595,11 +597,11 @@ def process_phone_step(message):
 def process_name_step_buy(message):
     try:
         chat_id = message.chat.id
-        currency = message.text.capitalize()
-        if currency=="Главное меню":
+        currency = message.text.upper()
+        if currency=="ГЛАВНОЕ МЕНЮ":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
         else:
-            if not (currency in ["Все"]+coin_names):
+            if not (currency in ["ВСЕ"]+coin_names1):
                 msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
                 bot.register_next_step_handler(msg, process_name_step_buy)
                 return
@@ -616,11 +618,11 @@ def process_name_step_buy(message):
 def process_name_step(message):
     try:
         chat_id = message.chat.id
-        name = message.text.capitalize()
-        if name=="Главное меню":
+        name = message.text.upper()
+        if name=="ГЛАВНОЕ МЕНЮ":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
         else:
-            if not (name in coin_names):
+            if not (name in coin_names1):
                 msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
                 bot.register_next_step_handler(msg, process_name_step)
                 return
