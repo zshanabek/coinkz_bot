@@ -24,7 +24,7 @@ product_dict = {}
 search_filter_dict = {}
 search_menu = ['Все', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
-date_buttons = ['1 день', '3 дня', 'Неделя', 'Назад']
+date_buttons = ['1 день', '3 дня', 'Неделя', 'Без разницы','Назад']
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
@@ -289,7 +289,7 @@ def process_commission_filter_step(message):
                     msg = bot.reply_to(message, 'Введите два числа разделенные пробелом')
                     bot.register_next_step_handler(msg, process_commission_filter_step)
                     return
-            msg = bot.send_message(message.chat.id, 'Выберите сортировку', reply_markup=create_keyboard(words=date_buttons, width=1))
+            msg = bot.send_message(message.chat.id, 'Выберите дату', reply_markup=create_keyboard(words=date_buttons, width=1))
             bot.register_next_step_handler(msg, process_sort_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
