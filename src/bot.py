@@ -499,50 +499,59 @@ def remove(message):
                 else:
                     keyboard.add(callback_bt1, callback_bt2)
 
-                msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
-                msg = bot.send_message(message.chat.id, 'Что вы хотите удалить?')
+                msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
                 bot.register_next_step_handler(msg, process_remove_step)
     # except Exception as e:
     #     bot.reply_to(message, 'oooops')
 def process_remove_step(message):
-    try:
+    # try:
         if message.text == 'Назад':
             my_ads(message)
         else:
             username = message.chat.username
             chat_id = message.chat.id
-            seq_num = int(message.text)
-            seq_num-=1
-            target = ObjectId()
-            docs = sell.find({'username':username})
-            docs_count = docs.count()
-
-            for i in range(docs_count):
-                if i==seq_num:
-                    target = docs[i]['_id']
-                print(str(i)+'fds'+str(seq_num))
-
-            sell.delete_one({'_id': target})
-            msg =bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1))
-            pages = get_pages_num({'username':username})
-            a = skiplimit(5,1,{'username':username}, chat_id,pages)
-
-            keyboard = types.InlineKeyboardMarkup(row_width = 2)
-            callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="-1")
-            callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
-            search_filter = search_filter_dict[chat_id]
-            if search_filter.current_page == 1:
-                keyboard.add(callback_bt2)
-            elif search_filter.current_page == pages:
-                keyboard.add(callback_bt1)
+            ads_number = sell.find({'username':username}).count()
+            if ads_number==0:
+                bot.send_message(message.chat.id, "У вас пока нету объявлений", reply_markup=create_keyboard(delete_buttons,1,False,False))
             else:
-                keyboard.add(callback_bt1, callback_bt2)
+                seq_num = int(message.text)
+                seq_num-=1
+                target = ObjectId()
+                docs = sell.find({'username':username})
+                docs_count = docs.count()
 
-            msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
-            msg = bot.send_message(message.chat.id, 'Что вы хотите удалить?')
-            bot.register_next_step_handler(msg, process_remove_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+                for i in range(docs_count):
+                    if i==seq_num:
+                        target = docs[i]['_id']
+                    print(str(i)+'fds'+str(seq_num))
+
+                sell.delete_one({'_id': target})
+                msg =bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1))
+
+                numbers = range(1,ads_number)
+                str_numbers = [str(i) for i in numbers]
+                str_numbers.append('Назад')
+
+                msg = bot.send_message(message.chat.id, "Какое по счету объявление вы хотите удалить?", reply_markup=create_keyboard(str_numbers,1,False,False))
+
+                pages = get_pages_num({'username':username})
+                a = skiplimit(5,1,{'username':username}, chat_id,pages)
+
+                keyboard = types.InlineKeyboardMarkup(row_width = 2)
+                callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="-1")
+                callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
+                search_filter = search_filter_dict[chat_id]
+                if search_filter.current_page == 1:
+                    keyboard.add(callback_bt2)
+                elif search_filter.current_page == pages:
+                    keyboard.add(callback_bt1)
+                else:
+                    keyboard.add(callback_bt1, callback_bt2)
+
+                msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
+                bot.register_next_step_handler(msg, process_remove_step)
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 
 def process_city_step(message):
