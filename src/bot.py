@@ -413,7 +413,7 @@ def skiplimit(page_size, page_num, filter_params, chat_id, total_pages):
             a += 'Биржа: {}\n'.format(i['exchange'])
             a += 'Город: {}\n'.format(i['city'])
             a += 'Владелец: @{}\n'.format(i['username'])
-            a += 'Номер телефона: {}\n'.format(i['phone_number'])            
+            a += 'Номер телефона: +{}\n'.format(i['phone_number'])            
             a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))
             b+=1
     return a
