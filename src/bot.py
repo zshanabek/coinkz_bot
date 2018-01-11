@@ -24,7 +24,7 @@ product_dict = {}
 search_filter_dict = {}
 search_menu = ['Все', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
-date_buttons = ['1 день', '3 дня', 'Неделя', 'Без разницы','Назад']
+date_buttons = ['1 день', '3 дня', 'Неделя', 'За все время','Назад']
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
@@ -308,6 +308,8 @@ def process_sort_step(message):
                 N = 3
             elif sort_type == 'Неделя':
                 N = 7
+            elif sort_type == 'За все время':
+                N = 50
             date_N_days_ago = datetime.datetime.now() - datetime.timedelta(days=N)
             search_filter.sort_type = ({'$gte':date_N_days_ago})
             filter_params = get_filter_params(chat_id)
