@@ -522,7 +522,23 @@ def process_remove_step(message):
 
             sell.delete_one({'_id': target})
             msg =bot.send_message(chat_id, "Ok, я удалил {0} объявление".format(seq_num+1))
-            bot.register_next_step_handler(msg, remove)
+            pages = get_pages_num({'username':username})
+            a = skiplimit(5,1,{'username':username}, chat_id,pages)
+
+            keyboard = types.InlineKeyboardMarkup(row_width = 2)
+            callback_bt1= types.InlineKeyboardButton(text="Назад", callback_data="-1")
+            callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
+            search_filter = search_filter_dict[chat_id]
+            if search_filter.current_page == 1:
+                keyboard.add(callback_bt2)
+            elif search_filter.current_page == pages:
+                keyboard.add(callback_bt1)
+            else:
+                keyboard.add(callback_bt1, callback_bt2)
+
+            msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
+            msg = bot.send_message(message.chat.id, 'Что вы хотите удалить?')
+            bot.register_next_step_handler(msg, process_remove_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
