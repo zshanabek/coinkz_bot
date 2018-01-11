@@ -107,7 +107,7 @@ def process_bazaar_step(message):
 def choose_city_buy(message):
     try:
         chat_id = message.chat.id
-        city = message.text
+        city = message.text.capitalize()
         if message.text == 'Назад':
             bazaar(message)
         else:
@@ -530,7 +530,7 @@ def process_remove_step(message):
 def process_city_step(message):
     try:
         chat_id = message.chat.id
-        city = message.text
+        city = message.text.capitalize()
         if message.text == 'Назад':
             bazaar(message)
         else:
@@ -566,7 +566,7 @@ def process_phone_step(message):
 def process_name_step_buy(message):
     try:
         chat_id = message.chat.id
-        currency = message.text
+        currency = message.text.capitalize()
         if currency=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
         else:
@@ -587,7 +587,7 @@ def process_name_step_buy(message):
 def process_name_step(message):
     try:
         chat_id = message.chat.id
-        name = message.text
+        name = message.text.capitalize()
         if name=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
         else:
@@ -708,11 +708,7 @@ def send_welcome(message):
 @bot.message_handler(commands=['terms'])
 def command_terms(message):
     bot.send_message(message.chat.id,
-        'Thank you for shopping with our demo bot. We hope you like your new time machine!\n'
-        '1. If your time machine was not delivered on time, please rethink your concept of time and try again.\n'
-        '2. If you find that your time machine is not working, kindly contact our future service workshops on Trappist-1e.'
-        ' They will be accessible anywhere between May 2075 and November 4000 C.E.\n'
-        '3. If you would like a refund, kindly apply for one yesterday and we will have sent it to you immediately.')
+        '''Каждую неделю вам начисляются 3 бесплатных объявлений.Если вы использовали все 3 то можете купить один из наших пакетов,для того чтобы размешать больше объявлений.В случае если вы не использовали объявления,которые вам доступны в течение недели,у вас есть возможность использовать их в следующей неделе.''')
 
 @bot.message_handler(commands=['settings'])
 def settings(message):
