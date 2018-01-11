@@ -322,7 +322,6 @@ def process_sort_step(message):
             callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
             keyboard.add(callback_bt2)
             msg = bot.send_message(chat_id,a, reply_markup=keyboard)
-            bot.send_message(chat_id, str(filter_params))
 
             bot.register_next_step_handler(msg, process_sort_step)
     # except Exception as e:
