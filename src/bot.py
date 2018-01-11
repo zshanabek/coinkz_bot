@@ -399,7 +399,9 @@ def skiplimit(page_size, page_num, filter_params, chat_id, total_pages):
     b = page_size * page_num - page_size +1
     a = 'Найдено продавцoв: {0}\n\n'.format(ads_count)
     for i in cursor:
-        while (b < page_size*page_num+1):
+        if b==page_size * page_num +1:
+            break
+        else:
             a += '{0}. Криптовалюта: {1}\n'.format(b, i['name'])
             a += 'Сумма покупки: $'+'{}\n'.format(i['price'])
             a += 'Комиссия: {}%\n'.format(i['percent'])
