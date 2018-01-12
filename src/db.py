@@ -30,20 +30,20 @@ usernames = ['iSapar', 'zshanabek', 'Yermuhanbet', 'KassymkhanTJ', 'bimurat_mukh
 sell = db.sell
 traders = db.traders
 
-db.sell.delete_many({})   
-db.traders.delete_many({})  
-for i in range(0,200):
-    sell.insert_one({
-        'name': random.choice(coin_names),
-        'price': random.randint(10, 200000),
-        'percent': random.randint(0, 20),
-        'exchange': random.choice(exchanges),                
-        'city': random.choice(cities),
-        'username': random.choice(usernames),
-        'comment': fake.text(),      
-        'phone_number': fake.phone_number(),
-        "created_at": random_date(d1, d2)
-    })
-cursor = sell.find({'price': {'$gte': 0}, 'created_at': {'$gte': datetime.datetime(2018, 1, 4, 21, 19, 18, 528867)}})
+# db.sell.delete_many({})   
+# db.traders.delete_many({})  
+# for i in range(0,200):
+#     sell.insert_one({
+#         'name': random.choice(coin_names),
+#         'price': random.randint(10, 200000),
+#         'percent': random.randint(0, 20),
+#         'exchange': random.choice(exchanges),                
+#         'city': random.choice(cities),
+#         'username': random.choice(usernames),
+#         'comment': fake.text(),      
+#         'phone_number': fake.phone_number(),
+#         "created_at": random_date(d1, d2)
+#     })
+cursor = sell.find({'price': {'$gte': 7, '$lte': 77777}, 'percent': {'$gte': 0}, 'created_at': {'$gte': datetime.datetime(2017, 11, 23, 19, 23, 54, 798518)}, 'city': 'Атырау', 'name': 'Monero'})
 for document in cursor: 
     pprint(document)

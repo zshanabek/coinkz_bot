@@ -298,7 +298,7 @@ def process_commission_filter_step(message):
         bot.reply_to(message, 'oooops')
 
 def process_sort_step(message):
-    # try:
+    try:
         chat_id = message.chat.id
         sort_type = message.text
         search_filter = search_filter_dict[chat_id]
@@ -317,7 +317,6 @@ def process_sort_step(message):
             search_filter.sort_type = ({'$gte':date_N_days_ago})
             filter_params = get_filter_params(chat_id)
             pages = get_pages_num(filter_params)
-
             a = skiplimit(5,1,filter_params, chat_id,pages)
             search_filter.current_page = 1
             keyboard = types.InlineKeyboardMarkup(row_width = 2)
@@ -328,12 +327,12 @@ def process_sort_step(message):
             else:
                 msg = bot.send_message(chat_id,a)                
             bot.register_next_step_handler(msg, process_sort_step)
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
-    # try:
+    try:
         if call.message:
             chat_id = call.message.chat.id
             search_filter = search_filter_dict[chat_id]
@@ -375,8 +374,8 @@ def callback_inline(call):
                 else:
                     keyboard.add(callback_bt1, callback_bt2)
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
-    # except Exception as e:
-    #     bot.reply_to(call.message, 'oooops')
+    except Exception as e:
+        bot.reply_to(call.message, 'oooops')
 
 def get_filter_params(chat_id):
     search_filter = search_filter_dict[chat_id]
@@ -475,7 +474,7 @@ def process_my_ads_step(message):
     elif message.text == 'Главное меню':
         handle_main_menu_btn(message)
 def remove(message):
-    # try:
+    try:
         username = message.chat.username
         chat_id = message.chat.id
         ads_number = sell.find({'username':username}).count()
@@ -508,10 +507,11 @@ def remove(message):
 
                 msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
                 bot.register_next_step_handler(msg, process_remove_step)
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
+
 def process_remove_step(message):
-    # try:
+    try:
         if message.text == 'Назад':
             my_ads(message)
         else:
@@ -557,9 +557,8 @@ def process_remove_step(message):
 
                 msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
                 bot.register_next_step_handler(msg, process_remove_step)
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
-
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def process_city_step(message):
     try:
@@ -600,21 +599,22 @@ def process_phone_step(message):
 def process_name_step_buy(message):
     try:
         chat_id = message.chat.id
-        currency = message.text.upper()
-        if currency=="ГЛАВНОЕ МЕНЮ":
+        currency = message.text.capitalize()
+        if currency=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
-        else:
-            if not (currency in ["ВСЕ"]+coin_names1):
-                msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
-                bot.register_next_step_handler(msg, process_name_step_buy)
-                return
+        elif currency == "Neo" or currency=="Nem":
+            currency = currency.upper()
+        if not (currency in ["Все"]+coin_names):
+            msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
+            bot.register_next_step_handler(msg, process_name_step_buy)
+            return
 
-            search_filter = search_filter_dict[chat_id]
-            search_filter.currency = currency
+        search_filter = search_filter_dict[chat_id]
+        search_filter.currency = currency
 
-            msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный тире, от меньшего к большому. Например: 2000-5000. Чтобы искать все цены нажмите на кнопку 'Все'",reply_markup=create_keyboard(words=search_menu,width=1))
+        msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный тире, от меньшего к большому. Например: 2000-5000. Чтобы искать все цены нажмите на кнопку 'Все'",reply_markup=create_keyboard(words=search_menu,width=1))
 
-            bot.register_next_step_handler(msg, process_find_price)
+        bot.register_next_step_handler(msg, process_find_price)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
