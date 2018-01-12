@@ -97,9 +97,8 @@ def bazaar(message):
 
 def process_bazaar_step(message):
     if message.text =='Купить':
-        msg = bot.send_message(message.chat.id, '''Отлично! Сейчас я задам несколько вопросов. Ответы на них буду составлять параметры поиска в базе данных объявлений. Поехали!\n
-        Выберите город из списка.
-        ''', reply_markup=create_keyboard(["Все"]+cities+['Назад'],1,False,False))
+        msg = bot.send_message(message.chat.id, 'Отлично! Сейчас я задам несколько вопросов. Ответы на них буду составлять параметры поиска в моей базе данных. Таким образом я найду для вас нужные объявления. Поехали!\n'
+        'Для начала выберите город из списка.', reply_markup=create_keyboard(["Все"]+cities+['Назад'],1,False,False))
         bot.register_next_step_handler(msg, choose_city_buy)
     elif message.text == 'Продать':
         sell_coin(message)
@@ -299,7 +298,7 @@ def process_commission_filter_step(message):
         bot.reply_to(message, 'oooops')
 
 def process_sort_step(message):
-    try:
+    # try:
         chat_id = message.chat.id
         sort_type = message.text
         search_filter = search_filter_dict[chat_id]
@@ -318,20 +317,23 @@ def process_sort_step(message):
             search_filter.sort_type = ({'$gte':date_N_days_ago})
             filter_params = get_filter_params(chat_id)
             pages = get_pages_num(filter_params)
+
             a = skiplimit(5,1,filter_params, chat_id,pages)
             search_filter.current_page = 1
             keyboard = types.InlineKeyboardMarkup(row_width = 2)
             callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
             keyboard.add(callback_bt2)
-            msg = bot.send_message(chat_id,a, reply_markup=keyboard)
-
+            if pages != 1:            
+                msg = bot.send_message(chat_id,a, reply_markup=keyboard)
+            else:
+                msg = bot.send_message(chat_id,a)                
             bot.register_next_step_handler(msg, process_sort_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
-    try:
+    # try:
         if call.message:
             chat_id = call.message.chat.id
             search_filter = search_filter_dict[chat_id]
@@ -373,8 +375,8 @@ def callback_inline(call):
                 else:
                     keyboard.add(callback_bt1, callback_bt2)
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
-    except Exception as e:
-        bot.reply_to(call.message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(call.message, 'oooops')
 
 def get_filter_params(chat_id):
     search_filter = search_filter_dict[chat_id]
@@ -439,7 +441,7 @@ def sell_coin(message):
             msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
         else:
             ct = cities+["Назад"]
-            msg = bot.reply_to(message, '''Отлично! Сейчас я задам несколько вопросов, касающиеся вашего объявления о продаже криптовалюты. Ответьте на них пожалуйста.\n Сперва, выберите город из списка''', reply_markup=create_keyboard(ct,3,True,False))
+            msg = bot.reply_to(message, 'Отлично! Сейчас я задам несколько вопросов, касающиеся вашего объявления о продаже криптовалюты. Ответьте на них пожалуйста. Если все хорошо, я опубликую его. Это позволит другим моим пользователи найти ваше объявление. Если оно им нравится, то вам позовнят, либо напишут. И так,  поехали.\n''Сперва, выберите ваш город из списка', reply_markup=create_keyboard(ct,3,True,False))
             bot.register_next_step_handler(msg, process_city_step)
 
 def my_ads(message):
@@ -473,7 +475,7 @@ def process_my_ads_step(message):
     elif message.text == 'Главное меню':
         handle_main_menu_btn(message)
 def remove(message):
-    try:
+    # try:
         username = message.chat.username
         chat_id = message.chat.id
         ads_number = sell.find({'username':username}).count()
@@ -506,10 +508,10 @@ def remove(message):
 
                 msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
                 bot.register_next_step_handler(msg, process_remove_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 def process_remove_step(message):
-    try:
+    # try:
         if message.text == 'Назад':
             my_ads(message)
         else:
@@ -555,8 +557,8 @@ def process_remove_step(message):
 
                 msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
                 bot.register_next_step_handler(msg, process_remove_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 
 def process_city_step(message):
