@@ -328,7 +328,7 @@ def process_sort_step(message):
             callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
             keyboard.add(callback_bt2)
             if pages != 1:            
-                msg = bot.send_message(chat_id,a, reply_markup=keyboard)
+                msg = bot.send_message(chat_id,a, reply_markup=keyboard, parse_mode='HTML')
             else:
                 msg = bot.send_message(chat_id,a, parse_mode='HTML')                
             bot.register_next_step_handler(msg, process_sort_step)
@@ -359,7 +359,7 @@ def callback_inline(call):
                     keyboard.add(callback_bt1)
                 else:
                     keyboard.add(callback_bt1, callback_bt2)
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard,parse_mode="HTML")
             else:
                 pages = get_pages_num({'username': call.message.chat.username})                
                 if call.data =='-1':
@@ -378,7 +378,7 @@ def callback_inline(call):
                     keyboard.add(callback_bt1)
                 else:
                     keyboard.add(callback_bt1, callback_bt2)
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard)
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=a, reply_markup=keyboard,parse_mode="HTML")
     except Exception as e:
         bot.reply_to(call.message, 'oooops')
 
@@ -466,9 +466,9 @@ def my_ads(message):
             keyboard = types.InlineKeyboardMarkup(row_width = 2)
             callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
             keyboard.add(callback_bt2)
-            msg = bot.send_message(message.chat.id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))
-            msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard, parse_mode='HTML')
-            bot.register_next_step_handler(msg, process_my_ads_step)
+            msg = bot.send_message(chat_id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))
+            msg1 = bot.send_message(chat_id, a, parse_mode='HTML', reply_markup=keyboard)
+            bot.register_next_step_handler(msg1, process_my_ads_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -511,13 +511,13 @@ def remove(message):
                 else:
                     keyboard.add(callback_bt1, callback_bt2)
 
-                msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
+                msg = bot.send_message(message.chat.id, a, reply_markup=keyboard, parse_mode="HTML")
                 bot.register_next_step_handler(msg, process_remove_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
 def process_remove_step(message):
-    try:
+    # try:
         if message.text == 'Назад':
             my_ads(message)
         else:
@@ -561,10 +561,10 @@ def process_remove_step(message):
                 else:
                     keyboard.add(callback_bt1, callback_bt2)
 
-                msg = bot.send_message(message.chat.id, a, reply_markup=keyboard)
+                msg = bot.send_message(message.chat.id, a, reply_markup=keyboard, parse_mode="HTML")
                 bot.register_next_step_handler(msg, process_remove_step)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_city_step(message):
     # try:
