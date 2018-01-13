@@ -26,12 +26,11 @@ cities = ['Алматы','Астана','Шымкент','Караганда','�
 
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
-usernames = ['iSapar', 'zshanabek', 'Yermuhanbet', 'KassymkhanTJ', 'bimurat_mukhtar','vakidzaci']
+usernames = ['hancapital', 'zshanabek', 'Yermuhanbet', 'KassymkhanTJ', 'bimurat_mukhtar','vakidzaci']
 sell = db.sell
 traders = db.traders
 
 # db.sell.delete_many({})   
-# db.traders.delete_many({})  
 # for i in range(0,200):
 #     sell.insert_one({
 #         'name': random.choice(coin_names),
@@ -44,6 +43,6 @@ traders = db.traders
 #         'phone_number': fake.phone_number(),
 #         "created_at": random_date(d1, d2)
 #     })
-cursor = sell.find({'price': {'$gte': 7, '$lte': 77777}, 'percent': {'$gte': 0}, 'created_at': {'$gte': datetime.datetime(2017, 11, 23, 19, 23, 54, 798518)}, 'city': 'Атырау', 'name': 'Monero'})
+cursor = sell.find({'price': {'$gte': 0}, 'percent': {'$gte': 0}, 'created_at': {'$gte': datetime.datetime(2017, 11, 24, 22, 31, 41, 773241)}, 'city': 'Караганда', 'name': 'BitShares'})
 for document in cursor: 
     pprint(document)

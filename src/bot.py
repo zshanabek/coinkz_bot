@@ -10,6 +10,7 @@ from telebot.types import LabeledPrice
 from telebot.types import ShippingOption
 import datetime
 import math
+import pprint
 silver_price = [LabeledPrice(label='Silver', amount=200000)]
 gold_price = [LabeledPrice(label='Gold', amount=500000)]
 platinum_price = [LabeledPrice(label='Platinum', amount=800000)]
@@ -26,8 +27,6 @@ search_menu = ['Все', 'Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
 date_buttons = ['1 день', '3 дня', 'Неделя', 'За все время','Назад']
 coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitShares', 'Stellar', 'Ripple', 'Dash', 'Lisk', 'Waves', 'Ethereum Classic', 'Monero', 'ZCash']
-
-coin_names1 = ['BITCOIN', 'ETHEREUM', 'LITECOIN', 'NEO', 'NEM', 'STRATIS', 'BITSHARES', 'STELLAR', 'RIPPLE', 'DASH', 'LISK', 'WAVES', 'ETHEREUM CLASSIC', 'MONERO', 'ZCASH']
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Кызылорда','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
 
@@ -316,6 +315,7 @@ def process_sort_step(message):
             date_N_days_ago = datetime.datetime.now() - datetime.timedelta(days=N)
             search_filter.sort_type = ({'$gte':date_N_days_ago})
             filter_params = get_filter_params(chat_id)
+            bot.send_message(chat_id, str(filter_params))
             pages = get_pages_num(filter_params)
             a = skiplimit(5,1,filter_params, chat_id,pages)
             search_filter.current_page = 1
@@ -325,7 +325,7 @@ def process_sort_step(message):
             if pages != 1:            
                 msg = bot.send_message(chat_id,a, reply_markup=keyboard)
             else:
-                msg = bot.send_message(chat_id,a)                
+                msg = bot.send_message(chat_id,a, parse_mode='HTML')                
             bot.register_next_step_handler(msg, process_sort_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -386,7 +386,7 @@ def get_filter_params(chat_id):
     filter_params["created_at"] = search_filter.sort_type
     if search_filter.city != "Все":
         filter_params["city"]=search_filter.city
-    if search_filter.currency != "ВСЕ":
+    if search_filter.currency != "Все":
         filter_params["name"]=search_filter.currency
 
     return filter_params
@@ -414,7 +414,8 @@ def skiplimit(page_size, page_num, filter_params, chat_id, total_pages):
             a += 'Биржа: {}\n'.format(i['exchange'])
             a += 'Город: {}\n'.format(i['city'])
             a += 'Владелец: @{}\n'.format(i['username'])
-            a += 'Номер телефона: +{}\n'.format(i['phone_number'])            
+            a += 'Номер телефона: {}\n'.format('+'+i['phone_number'] if i['phone_number'] else '')  
+            a += 'Комментарий: <i>{}</i>\n'.format(i['comment'])
             a += 'Дата создания (UTC): {}\n\n'.format(i['created_at'].strftime("%d/%m/%Y"))
             b+=1
     return a
@@ -599,11 +600,13 @@ def process_phone_step(message):
 def process_name_step_buy(message):
     try:
         chat_id = message.chat.id
-        currency = message.text.capitalize()
+        currency = message.text.title()
         if currency=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
         elif currency == "Neo" or currency=="Nem":
             currency = currency.upper()
+        elif currency == 'Bitshares':
+            currency = 'BitShares'
         if not (currency in ["Все"]+coin_names):
             msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
             bot.register_next_step_handler(msg, process_name_step_buy)
@@ -621,11 +624,15 @@ def process_name_step_buy(message):
 def process_name_step(message):
     try:
         chat_id = message.chat.id
-        name = message.text.upper()
-        if name=="ГЛАВНОЕ МЕНЮ":
+        name = message.text.title()
+        if name=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
+        elif name == "Neo" or name=="Nem":
+            name = name.upper()
+        elif name == 'Bitshares':
+            name = 'BitShares'
         else:
-            if not (name in coin_names1):
+            if not (name in coin_names):
                 msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
                 bot.register_next_step_handler(msg, process_name_step)
                 return
@@ -701,7 +708,8 @@ def process_comment_step(message):
         else:
             product.comment = comment
         buttons = ['Нет', 'Да']
-        msg = bot.reply_to(message, 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nКомментарий: '+product.comment, reply_markup=create_keyboard(buttons,2,False,False))
+        a = 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: @'+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
+        msg = bot.reply_to(message, a, reply_markup=create_keyboard(buttons,2,False,False),parse_mode='HTML')
         bot.register_next_step_handler(msg, process_confirmation_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -723,7 +731,8 @@ def process_confirmation_step(message):
                 'phone_number': product.contact,
                 "created_at": datetime.datetime.utcnow()
             })
-            bot.send_message(chat_id, 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nКомментарий: '+product.comment, reply_markup = create_keyboard(main_buttons,1,False,False))
+            a = 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: @'+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
+            bot.send_message(chat_id, a, reply_markup = create_keyboard(main_buttons,1,False,False), parse_mode='HTML')
         else:
             bot.send_message(chat_id, 'Вы отменили объявление о продаже', reply_markup=create_keyboard(main_buttons,1,False,False))
     except Exception as e:
