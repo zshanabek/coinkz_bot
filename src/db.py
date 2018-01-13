@@ -43,6 +43,6 @@ traders = db.traders
 #         'phone_number': fake.phone_number(),
 #         "created_at": random_date(d1, d2)
 #     })
-cursor = sell.find({'price': {'$gte': 0}, 'percent': {'$gte': 0}, 'created_at': {'$gte': datetime.datetime(2017, 11, 25, 0, 2, 39, 1002)}, 'city': 'Алматы', 'name': 'Ethereum Classic'})
+cursor = sell.find({'price': {'$gte': 0, '$lte': 100000000}, 'percent': {'$gte': 0}, 'created_at': {'$gte': datetime.datetime(2017, 11, 25, 0, 41, 56, 423698)}, 'city': 'Усть-Каменогорск', 'name': 'ZCash'})
 for document in cursor: 
     pprint(document)

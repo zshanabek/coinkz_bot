@@ -109,20 +109,25 @@ def process_bazaar_step(message):
 def choose_city_buy(message):
     try:
         chat_id = message.chat.id
-        city = message.text.capitalize()
+        city = message.text
         if message.text == 'Назад':
             bazaar(message)
         else:
-            if not (city in cities+['Все']):
+            count = 0
+            for i in cities+['Все']:
+                if iequal(city, i):
+                    count+=1
+            if count==1:
+                search_filter = SearchFilter(city)
+                search_filter_dict[chat_id] = search_filter
+                search_filter.city = city
+                msg = bot.reply_to(message, 'Выберите криптовалюту', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
+                bot.register_next_step_handler(msg, process_name_step_buy)
+            else:
                 msg = bot.reply_to(message, 'Выберите город из списка')
                 bot.register_next_step_handler(msg, choose_city_buy)
                 return
-            search_filter = SearchFilter(city)
-
-            search_filter_dict[chat_id] = search_filter
-            search_filter.city = city
-            msg = bot.reply_to(message, 'Выберите криптовалюту', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
-            bot.register_next_step_handler(msg, process_name_step_buy)
+            
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -461,8 +466,8 @@ def my_ads(message):
             keyboard = types.InlineKeyboardMarkup(row_width = 2)
             callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="1")
             keyboard.add(callback_bt2)
-            msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard)
             msg = bot.send_message(message.chat.id, 'Ваши объявления', reply_markup=create_keyboard(delete_buttons,1,False,False))
+            msg1 = bot.send_message(message.chat.id, a, reply_markup=keyboard, parse_mode='HTML')
             bot.register_next_step_handler(msg, process_my_ads_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -562,13 +567,13 @@ def process_remove_step(message):
         bot.reply_to(message, 'oooops')
 
 def process_city_step(message):
-    try:
+    # try:
         chat_id = message.chat.id
         city = message.text.capitalize()
         if message.text == 'Назад':
             bazaar(message)
         else:
-
+            count = 0
             for i in cities:
                 if iequal(city, i):
                     count+=1
@@ -590,8 +595,8 @@ def process_city_step(message):
                 bot.register_next_step_handler(msg, process_city_step)
                 return
             
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_phone_step(message):
     chat_id = message.chat.id
@@ -638,8 +643,9 @@ def process_name_step(message):
         if name=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
         else:
+            count = 0
             for i in coin_names:
-                if iequal(currency, i):
+                if iequal(name, i):
                     count+=1
         
             if count == 1:
@@ -719,8 +725,8 @@ def process_comment_step(message):
         else:
             product.comment = comment
         buttons = ['Нет', 'Да']
-        a = 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: @'+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
-        msg = bot.reply_to(message, a, reply_markup=create_keyboard(buttons,2,False,False),parse_mode='HTML')
+        a = 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: '+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
+        msg = bot.send_message(chat_id, a, reply_markup=create_keyboard(buttons,2,False,False),parse_mode='HTML')
         bot.register_next_step_handler(msg, process_confirmation_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -742,7 +748,7 @@ def process_confirmation_step(message):
                 'phone_number': product.contact,
                 "created_at": datetime.datetime.utcnow()
             })
-            a = 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: @'+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
+            a = 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: '+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
             bot.send_message(chat_id, a, reply_markup = create_keyboard(main_buttons,1,False,False), parse_mode='HTML')
         else:
             bot.send_message(chat_id, 'Вы отменили объявление о продаже', reply_markup=create_keyboard(main_buttons,1,False,False))
