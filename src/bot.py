@@ -96,7 +96,7 @@ def bazaar(message):
 
 def process_bazaar_step(message):
     if message.text =='Купить':
-        msg = bot.send_message(message.chat.id, 'Отлично! Сейчас я задам несколько вопросов. Ответы на них будут составлять параметры поиска в моей базе объялений. Таким образом я найду для вас нужные объявления. Поехали!\n'
+        msg = bot.send_message(message.chat.id, 'Отлично! Сейчас я задам несколько вопросов. Ответы на них будут составлять параметры поиска в моей базе объявлений. Таким образом я найду для вас нужные объявления. Поехали!\n'
         'Для начала выберите город из списка.', reply_markup=create_keyboard(["Все"]+cities+['Назад'],1,False,False))
         bot.register_next_step_handler(msg, choose_city_buy)
     elif message.text == 'Продать':
@@ -568,21 +568,28 @@ def process_city_step(message):
         if message.text == 'Назад':
             bazaar(message)
         else:
-            if not (city in cities):
+
+            for i in cities:
+                if iequal(city, i):
+                    count+=1
+
+            if count == 1:
+                product = Product(city)
+
+                product_dict[chat_id] = product
+
+                product.city = city
+                markup = types.ReplyKeyboardMarkup(row_width=2)
+                itembtn1 = types.KeyboardButton('Нет')
+                itembtn2 = types.KeyboardButton('Отправить контакт',request_contact=True)
+                markup.add(itembtn1, itembtn2)
+                msg = bot.reply_to(message, 'Хотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме', reply_markup=markup)
+                bot.register_next_step_handler(msg, process_phone_step)
+            else:
                 msg = bot.reply_to(message, 'Выберите город из списка')
                 bot.register_next_step_handler(msg, process_city_step)
                 return
-            product = Product(city)
-
-            product_dict[chat_id] = product
-
-            product.city = city
-            markup = types.ReplyKeyboardMarkup(row_width=2)
-            itembtn1 = types.KeyboardButton('Нет')
-            itembtn2 = types.KeyboardButton('Отправить контакт',request_contact=True)
-            markup.add(itembtn1, itembtn2)
-            msg = bot.reply_to(message, 'Хотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме', reply_markup=markup)
-            bot.register_next_step_handler(msg, process_phone_step)
+            
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -598,28 +605,31 @@ def process_phone_step(message):
     bot.register_next_step_handler(msg, process_name_step)
 
 def process_name_step_buy(message):
-    try:
+    # try:
         chat_id = message.chat.id
-        currency = message.text.title()
+        currency = message.text
         if currency=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
-        elif currency == "Neo" or currency=="Nem":
-            currency = currency.upper()
-        elif currency == 'Bitshares':
-            currency = 'BitShares'
-        if not (currency in ["Все"]+coin_names):
-            msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
-            bot.register_next_step_handler(msg, process_name_step_buy)
-            return
+        else:
+            count = 0            
+            for i in ['Все']+coin_names:
+                if iequal(currency, i):
+                    count+=1
+            
+            if count == 1:
+                search_filter = search_filter_dict[chat_id]
+                search_filter.currency = currency
 
-        search_filter = search_filter_dict[chat_id]
-        search_filter.currency = currency
+                msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный тире, от меньшего к большому. Например: 2000-5000. Чтобы искать все цены нажмите на кнопку 'Все'",reply_markup=create_keyboard(words=search_menu,width=1))
 
-        msg = bot.send_message(message.chat.id, "Введите ценовой диапозон, разделенный тире, от меньшего к большому. Например: 2000-5000. Чтобы искать все цены нажмите на кнопку 'Все'",reply_markup=create_keyboard(words=search_menu,width=1))
-
-        bot.register_next_step_handler(msg, process_find_price)
-    except Exception as e:
-        bot.reply_to(message, 'oooops')
+                bot.register_next_step_handler(msg, process_find_price)
+            else:
+                msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
+                bot.register_next_step_handler(msg, process_name_step_buy)
+                return
+       
+    # except Exception as e:
+    #     bot.reply_to(message, 'oooops')
 
 def process_name_step(message):
     try:
@@ -627,21 +637,22 @@ def process_name_step(message):
         name = message.text.title()
         if name=="Главное меню":
             bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(main_buttons,1,False,False))
-        elif name == "Neo" or name=="Nem":
-            name = name.upper()
-        elif name == 'Bitshares':
-            name = 'BitShares'
         else:
-            if not (name in coin_names):
+            for i in coin_names:
+                if iequal(currency, i):
+                    count+=1
+        
+            if count == 1:
+                product = product_dict[chat_id]
+                product.name = name
+
+                msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
+                bot.register_next_step_handler(msg, process_price_step)
+            else:
                 msg = bot.reply_to(message, 'Выберите криптовалюту из списка')
                 bot.register_next_step_handler(msg, process_name_step)
                 return
 
-            product = product_dict[chat_id]
-            product.name = name
-
-            msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
-            bot.register_next_step_handler(msg, process_price_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -769,6 +780,11 @@ def process_settings_step(message):
 def handle_main_menu_btn(message):
 	bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(words=main_buttons,width=1))
 
+def iequal(a, b):
+    try:
+        return a.upper() == b.upper()
+    except AttributeError:
+        return a == b
 if __name__ == '__main__':
     db = client.fuckingtelegrambot
     sell = db.sell
