@@ -88,6 +88,8 @@ def handle_message(message):
         determine_package(message)
     elif message.text == "Главное меню":
         handle_main_menu_btn(message)
+    elif message.text =='Назад':
+        settings(message)
 
 
 def bazaar(message):
