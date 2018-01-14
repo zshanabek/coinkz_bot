@@ -33,7 +33,7 @@ cities = ['Алматы','Астана','Шымкент','Караганда','�
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
 main_buttons = ['Базар', 'Настройки', 'Условия использования']
-packages = ['Silver', 'Gold', 'Platinum', 'Узнать свой пакет', 'Отменить подписку', 'Назад']
+packages = ['Silver', 'Gold', 'Platinum', 'Узнать свой пакет', 'Отменить подписку', 'Назад к настройкам']
 delete_buttons = ['Удалить', 'Мои объявления', 'Главное меню']
 bazaar_buttons = ['Купить', 'Продать', 'Мои объявления', 'Главное меню']
 settings_buttons = ['Пакеты']
@@ -88,7 +88,7 @@ def handle_message(message):
         determine_package(message)
     elif message.text == "Главное меню":
         handle_main_menu_btn(message)
-    elif message.text =='Назад':
+    elif message.text =='Назад к настройкам':
         settings(message)
 
 
@@ -148,7 +148,7 @@ def process_package_step(message):
         cancel_subscription(message)
     elif message.text == "Узнать свой пакет":
         determine_package(message)
-    elif message.text == "Назад":
+    elif message.text == "Назад к настройкам":
         settings(message)
 
 def cancel_subscription(message):
