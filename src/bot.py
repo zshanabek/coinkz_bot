@@ -139,22 +139,6 @@ def choose_city_buy(message):
         bot.reply_to(message, 'oooops')
 
 def list_packages(message):
-    bot.send_message(message.chat.id, '''<b>Инструкция по размещению объявлений:</b>
-При использовании данного бота каждую неделю вы получаете право подать 3 бесплатных объявления. По истечению лимита в 3 объявления в неделю, вам необходимо приобрести один из платных пакетов.
-
-<b>💸Стоимость и наименование пакетов:</b>
-Silver - дает право размещать 10 объявлений.Цена: 2000тг.
-Gold - дает право размещать 30 объявлений.Цена: 5000тг.
-Platinum - дает право размещать 50 объявлений.Цена: 8000тг.
-
-<b>Что важно знать:</b>
-В случае,если вы не подали за неделю то количество объявлений, которое вы приобрели, то остаток переносится на следующую неделю.
-Данное правило не относится к еженедельным 3 бесплатным объявлениям.
-
-<b>Удачи мой друг</b>🙌
-
-P.S Если есть предложения и отзывы о боте,напиши в личку
-@hancapital''', parse_mode="HTML")
     msg = bot.send_message(message.chat.id, "Выберите пакет", reply_markup=create_keyboard(words=packages,width=1))
     bot.register_next_step_handler(msg, process_package_step)
 
@@ -540,7 +524,7 @@ def remove(message):
         bot.reply_to(message, 'oooops')
 
 def process_remove_step(message):
-    # try:
+    try:
         if message.text == 'Назад':
             my_ads(message)
         else:
@@ -586,11 +570,11 @@ def process_remove_step(message):
 
                 msg = bot.send_message(message.chat.id, a, reply_markup=keyboard, parse_mode="HTML")
                 bot.register_next_step_handler(msg, process_remove_step)
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def process_city_step(message):
-    # try:
+    try:
         chat_id = message.chat.id
         city = message.text.capitalize()
         if message.text == 'Назад':
@@ -618,8 +602,8 @@ def process_city_step(message):
                 bot.register_next_step_handler(msg, process_city_step)
                 return
             
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def process_phone_step(message):
     chat_id = message.chat.id
@@ -633,7 +617,7 @@ def process_phone_step(message):
     bot.register_next_step_handler(msg, process_name_step)
 
 def process_name_step_buy(message):
-    # try:
+    try:
         chat_id = message.chat.id
         currency = message.text
         if currency=="Главное меню":
@@ -656,8 +640,8 @@ def process_name_step_buy(message):
                 bot.register_next_step_handler(msg, process_name_step_buy)
                 return
        
-    # except Exception as e:
-    #     bot.reply_to(message, 'oooops')
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 def process_name_step(message):
     try:
@@ -817,6 +801,22 @@ P.S. Если есть предложения и отзывы о боте, на�
 
 @bot.message_handler(commands=['settings'])
 def settings(message):
+    bot.send_message(message.chat.id, '''<b>Инструкция по размещению объявлений:</b>
+    При использовании данного бота каждую неделю вы получаете право подать 3 бесплатных объявления. По истечению лимита в 3 объявления в неделю, вам необходимо приобрести один из платных пакетов.
+
+    <b>💸Стоимость и наименование пакетов:</b>
+    Silver - дает право размещать 10 объявлений.Цена: 2000тг.
+    Gold - дает право размещать 30 объявлений.Цена: 5000тг.
+    Platinum - дает право размещать 50 объявлений.Цена: 8000тг.
+
+    <b>Что важно знать:</b>
+    В случае,если вы не подали за неделю то количество объявлений, которое вы приобрели, то остаток переносится на следующую неделю.
+    Данное правило не относится к еженедельным 3 бесплатным объявлениям.
+
+    <b>Удачи мой друг</b>🙌
+
+    P.S Если есть предложения и отзывы о боте,напиши в личку
+    @hancapital''', parse_mode="HTML")
     msg = bot.send_message(message.chat.id, 'Выберите настройки', reply_markup=create_keyboard(settings_buttons+['Главное меню'],1,False,False))
     bot.register_next_step_handler(msg, process_settings_step)
 
