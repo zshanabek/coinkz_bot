@@ -456,18 +456,18 @@ def sell_coin(message):
     if (current_username == None):
         bot.send_message(message.chat.id, "У вас нету зарегестрированного имени пользователя Телеграм (username). Username нужен для того, чтобы покупатели могли с вами связаться. Зайдите в настройки вашего аккаунта и укажите юзернейм.")
     else:
-        if (sell.find({'username':current_username}).count()==3 and (t['is_paid']==None or t['is_paid']==False)):
-            msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (3 объявления). Купите один из пакетов чтобы публиковать больше объявлений")
-            list_packages(message)
-        elif (sell.find({'username':current_username}).count()==10 and t['is_paid']==1):
-            msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (10 объявлений). Купите один из пакетов чтобы публиковать больше объявлений")
-            list_packages(message)
-        elif (sell.find({'username':current_username}).count()==30 and t['is_paid']==2):
-            msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (10 объявлений). Купите один из пакетов чтобы публиковать больше объявлений")
-            list_packages(message)
-        elif (sell.find({'username':current_username}).count()==50 and t['is_paid']==3):
-            msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
-        else:
+        # if (sell.find({'username':current_username}).count()==3 and (t['is_paid']==None or t['is_paid']==False)):
+        #     msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (3 объявления). Купите один из пакетов чтобы публиковать больше объявлений")
+        #     list_packages(message)
+        # elif (sell.find({'username':current_username}).count()==10 and t['is_paid']==1):
+        #     msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (10 объявлений). Купите один из пакетов чтобы публиковать больше объявлений")
+        #     list_packages(message)
+        # elif (sell.find({'username':current_username}).count()==30 and t['is_paid']==2):
+        #     msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (10 объявлений). Купите один из пакетов чтобы публиковать больше объявлений")
+        #     list_packages(message)
+        # elif (sell.find({'username':current_username}).count()==50 and t['is_paid']==3):
+        #     msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
+        # else:
             ct = cities+["Назад"]
             msg = bot.reply_to(message, 'Отлично! Сейчас я задам несколько вопросов, касающиеся вашего нового объявления. Ответьте на них пожалуйста. Если все хорошо, я опубликую его. Это позволит другим пользователям найти ваше объявление. Если оно им понравится, то вам позвонят, либо напишут. И так, поехали.\n''Сперва, выберите ваш город из списка', reply_markup=create_keyboard(ct,3,True,False))
             bot.register_next_step_handler(msg, process_city_step)
