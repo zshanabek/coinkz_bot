@@ -30,7 +30,8 @@ usernames = ['hancapital', 'zshanabek', 'Yermuhanbet', 'KassymkhanTJ', 'bimurat_
 sell = db.sell
 traders = db.traders
 
-# db.sell.delete_many({})   
+db.sell.delete_many({}) 
+  
 # for i in range(0,200):
 #     sell.insert_one({
 #         'name': random.choice(coin_names),

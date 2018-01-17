@@ -303,7 +303,7 @@ def process_commission_filter_step(message):
                     msg = bot.reply_to(message, 'Введите два числа разделенные пробелом')
                     bot.register_next_step_handler(msg, process_commission_filter_step)
                     return
-            msg = bot.send_message(message.chat.id, 'Выберите промежуток времени', reply_markup=create_keyboard(words=date_buttons, width=1))
+            msg = bot.send_message(message.chat.id, 'Выберите промежуток времени со дня публикаций', reply_markup=create_keyboard(words=date_buttons, width=1))
             bot.register_next_step_handler(msg, process_sort_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
