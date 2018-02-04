@@ -129,7 +129,7 @@ def choose_city_buy(message):
                 search_filter = SearchFilter(city)
                 search_filter_dict[chat_id] = search_filter
                 search_filter.city = city
-                msg = bot.send_message(message, 'Выберите криптовалюту из списка', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
+                msg = bot.reply_to(message, 'Выберите криптовалюту', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
                 bot.register_next_step_handler(msg, process_name_step_buy)
             else:
                 msg = bot.reply_to(message, 'Выберите город из списка')
@@ -306,7 +306,7 @@ def process_commission_filter_step(message):
                     n1 = int(c[0])
                     n2 = int(c[1])
                     if n1>n2:
-                        msg = bot.reply_to(message, 'Введите комиссию от меньшего к большему!')
+                        msg = bot.reply_to(message, 'Введите комиссию от Введите цену от меньшего к большему!')
                         bot.register_next_step_handler(msg, process_commission_filter_step)
                         return
                     else:
