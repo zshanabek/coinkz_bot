@@ -58,7 +58,7 @@ class SearchFilter:
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    welcome_msg = "Здравствуйте, *{0}*. Что вы хотите сделать?a".format(message.chat.first_name)
+    welcome_msg = "Здравствуйте, *{0}*. Что вы хотите сделать?".format(message.chat.first_name)
     bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(words=main_buttons,width=1),parse_mode='markdown')
     username = message.chat.username
     if traders.find({ 'username': username}).count()<1:
