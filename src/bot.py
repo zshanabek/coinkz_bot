@@ -568,7 +568,7 @@ def process_city_step(message):
                 itembtn1 = types.KeyboardButton('Нет')
                 itembtn2 = types.KeyboardButton('Отправить контакт',request_contact=True)
                 markup.add(itembtn1, itembtn2)
-                msg = bot.reply_to(message, 'ХХотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме', reply_markup=markup)
+                msg = bot.reply_to(message, 'Хотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме', reply_markup=markup)
                 bot.register_next_step_handler(msg, process_phone_step)
             else:
                 msg = bot.reply_to(message, 'Выберите город из списка')
