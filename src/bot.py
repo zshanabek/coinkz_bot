@@ -105,6 +105,7 @@ def process_bazaar_step(message):
         my_ads(message)
     elif message.text == 'Главное меню':
         handle_main_menu_btn(message)
+    
 
 
 @bot.message_handler(commands=['buy'])
@@ -300,7 +301,7 @@ def process_commission_filter_step(message):
                     com = int(commission)
                     search_filter.commission = {"$eq": com}
                 else:
-                    msg = bot.reply_to(message, 'Введите два числа разделенные пробелом')
+                    msg = bot.reply_to(message, 'Процент комиссии должен быть числом')
                     bot.register_next_step_handler(msg, process_commission_filter_step)
                     return
             msg = bot.send_message(message.chat.id, 'Выберите промежуток времени со дня публикаций', reply_markup=create_keyboard(words=date_buttons, width=1))
