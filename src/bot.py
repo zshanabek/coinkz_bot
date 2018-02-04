@@ -58,7 +58,7 @@ class SearchFilter:
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    welcome_msg = "Здравствуйте, *{0}*. Что вы хотите сделать?".format(message.chat.first_name)
+    welcome_msg = "Здравствуйте, *{0}*. Что вы хотите сделать?a".format(message.chat.first_name)
     bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(words=main_buttons,width=1),parse_mode='markdown')
     username = message.chat.username
     if traders.find({ 'username': username}).count()<1:
@@ -344,8 +344,9 @@ def process_sort_step(message):
             a = skiplimit(5,1,filter_params, chat_id,pages)
             search_filter.current_page = 1
             keyboard = types.InlineKeyboardMarkup(row_width = 2)
-            callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
-            keyboard.add(callback_bt2)
+            if sell.find(filter_params).count()>5:
+                callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
+                keyboard.add(callback_bt2)
             if pages != 1:            
                 msg = bot.send_message(chat_id,a, reply_markup=keyboard, parse_mode='HTML')
             else:
