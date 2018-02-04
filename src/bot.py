@@ -129,7 +129,7 @@ def choose_city_buy(message):
                 search_filter = SearchFilter(city)
                 search_filter_dict[chat_id] = search_filter
                 search_filter.city = city
-                msg = bot.reply_to(message, 'Выберите криптовалюту', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
+                msg = bot.send_message(message, 'Выберите криптовалюту из списка', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
                 bot.register_next_step_handler(msg, process_name_step_buy)
             else:
                 msg = bot.reply_to(message, 'Выберите город из списка')
@@ -264,24 +264,24 @@ def process_find_price(message):
             else:
                 p = price.split("-")
                 if len(p)==1:
-                    msg = bot.reply_to(message, 'Введите два числа')
+                    msg = bot.reply_to(message, 'Введите два числа разделенными тире!')
                     bot.register_next_step_handler(msg, process_find_price)
                     return
                 elif(p[0].isdigit() and p[1].isdigit()):
                     n1 = int(p[0])
                     n2 = int(p[1])
                     if n1>n2:
-                        msg = bot.reply_to(message, 'Введите цену от большего к меньшему')
+                        msg = bot.reply_to(message, 'Введите цену от меньшего к большему!')
                         bot.register_next_step_handler(msg, process_find_price)
                         return
                     else:
                         search_filter.price = {"$gte": n1, "$lte": n2}
                 else:
-                    msg = bot.reply_to(message, 'Введите ценовой диапозон')
+                    msg = bot.reply_to(message, 'Введите ценовой диапозон!')
                     bot.register_next_step_handler(msg, process_find_price)
                     return
 
-            msg = bot.send_message(message.chat.id, '''Какую комиссию вы хотите найти? Наберите цифрами от 0 до 100. Если для вас это не важно нажмите "Все"''', reply_markup=create_keyboard(words=search_menu,width=1))
+            msg = bot.send_message(message.chat.id, '''Какую комиссию вы хотите найти? Введите диапозон, разделенный тире, от меньшего к большому. Например: 5-10. Если для вас это не важно нажмите 'Все' ''', reply_markup=create_keyboard(words=search_menu,width=1))
             bot.register_next_step_handler(msg, process_commission_filter_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -297,11 +297,22 @@ def process_commission_filter_step(message):
             if commission=='Все':
                search_filter.commission = {"$gte":0}
             else:
-                if(commission.isdigit()):
-                    com = int(commission)
-                    search_filter.commission = {"$eq": com}
+                c = commission.split("-")
+                if len(c)==1:
+                    msg = bot.reply_to(message, 'Введите два числа разделенными тире!')
+                    bot.register_next_step_handler(msg, process_commission_filter_step)
+                    return
+                elif(c[0].isdigit() and c[1].isdigit()):
+                    n1 = int(c[0])
+                    n2 = int(c[1])
+                    if n1>n2:
+                        msg = bot.reply_to(message, 'Введите комиссию от меньшего к большему!')
+                        bot.register_next_step_handler(msg, process_commission_filter_step)
+                        return
+                    else:
+                        search_filter.commission = {"$gte": n1, "$lte": n2}
                 else:
-                    msg = bot.reply_to(message, 'Процент комиссии должен быть числом')
+                    msg = bot.reply_to(message, 'Введите числовой диапозон!')
                     bot.register_next_step_handler(msg, process_commission_filter_step)
                     return
             msg = bot.send_message(message.chat.id, 'Выберите промежуток времени со дня публикаций', reply_markup=create_keyboard(words=date_buttons, width=1))
@@ -575,7 +586,7 @@ def process_phone_step(message):
     else:
         product.contact = ''
 
-    msg = bot.reply_to(message, 'Теперь выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True,False))
+    msg = bot.send_message(message, 'Теперь выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True,False))
     bot.register_next_step_handler(msg, process_name_step)
 
 def process_name_step_buy(message):
