@@ -558,7 +558,6 @@ def process_city_step(message):
             for i in cities:
                 if iequal(city, i):
                     count+=1
-
             if count == 1:
                 product = Product(city)
 
@@ -569,7 +568,7 @@ def process_city_step(message):
                 itembtn1 = types.KeyboardButton('Нет')
                 itembtn2 = types.KeyboardButton('Отправить контакт',request_contact=True)
                 markup.add(itembtn1, itembtn2)
-                msg = bot.reply_to(message, 'Хотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме', reply_markup=markup)
+                msg = bot.reply_to(message, 'ХХотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме', reply_markup=markup)
                 bot.register_next_step_handler(msg, process_phone_step)
             else:
                 msg = bot.reply_to(message, 'Выберите город из списка')
@@ -587,7 +586,7 @@ def process_phone_step(message):
     else:
         product.contact = ''
 
-    msg = bot.send_message(message, 'Теперь выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True,False))
+    msg = bot.send_message(chat_id, 'Теперь выберите криптовалюту.', reply_markup=create_keyboard(coin_names,1,True,False))
     bot.register_next_step_handler(msg, process_name_step)
 
 def process_name_step_buy(message):
