@@ -264,24 +264,24 @@ def process_find_price(message):
             else:
                 p = price.split("-")
                 if len(p)==1:
-                    msg = bot.send_message(chat_id, 'Введите два числа разделенными тире.')
+                    msg = bot.send_message(message.chat_id, 'Введите два числа разделенными тире.')
                     bot.register_next_step_handler(msg, process_find_price)
                     return
                 elif(p[0].isdigit() and p[1].isdigit()):
                     n1 = int(p[0])
                     n2 = int(p[1])
                     if n1>n2:
-                        msg = bot.send_message(chat_id, 'Введите цену от меньшего к большему.')
+                        msg = bot.send_message(message.chat_id, 'Введите цену от меньшего к большему.')
                         bot.register_next_step_handler(msg, process_find_price)
                         return
                     else:
                         search_filter.price = {"$gte": n1, "$lte": n2}
                 else:
-                    msg = bot.send_message(chat_id, 'Введите ценовой диапозон.')
+                    msg = bot.send_message(message.chat_id, 'Введите ценовой диапозон.')
                     bot.register_next_step_handler(msg, process_find_price)
                     return
 
-            msg = bot.send_message(chat.id, '''Какую комиссию вы хотите найти? Введите диапозон, разделенный тире, от меньшего к большому. Например: 5-10. Если для вас это не важно нажмите 'Все'.''', reply_markup=create_keyboard(words=search_menu,width=1))
+            msg = bot.send_message(message.chat.id, '''Какую комиссию вы хотите найти? Введите диапозон, разделенный тире, от меньшего к большому. Например: 5-10. Если для вас это не важно нажмите 'Все'.''', reply_markup=create_keyboard(words=search_menu,width=1))
             bot.register_next_step_handler(msg, process_commission_filter_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
