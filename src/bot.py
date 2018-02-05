@@ -653,7 +653,7 @@ def process_price_step(message):
         product = product_dict[chat_id]
         product.price = price
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-        msg = bot.reply_to(message, 'Какую комиссию вы берете? От 0 до 20.')
+        msg = bot.reply_to(message, 'Какую комиссию вы берете? От 0 до 100.')
         bot.register_next_step_handler(msg, process_percent_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -662,13 +662,13 @@ def process_percent_step(message):
     try:
         chat_id = message.chat.id
         percent = message.text
-        rng = range(0,21)
+        rng = range(0,101)
         if not percent.isdigit():
             msg = bot.reply_to(message, 'Процент комиссии должен быть числом.')
             bot.register_next_step_handler(msg, process_percent_step)
             return
         if int(percent) not in rng:
-            msg = bot.reply_to(message, 'Процент комиссии должен быть между 0 и 20.')
+            msg = bot.reply_to(message, 'Процент комиссии должен быть между 0 и 100.')
             bot.register_next_step_handler(msg, process_percent_step)
             return
         product = product_dict[chat_id]
