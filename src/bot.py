@@ -129,10 +129,10 @@ def choose_city_buy(message):
                 search_filter = SearchFilter(city)
                 search_filter_dict[chat_id] = search_filter
                 search_filter.city = city
-                msg = bot.send_message(chat_id, 'Выберите криптовалюту из списка.', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
+                msg = bot.reply_to(message, 'Выберите криптовалюту из списка.', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
                 bot.register_next_step_handler(msg, process_name_step_buy)
             else:
-                msg = bot.send_message(chat_id, 'Выберите город из списка.')
+                msg = bot.reply_to(message, 'Выберите город из списка.')
                 bot.register_next_step_handler(msg, choose_city_buy)
                 return
             
@@ -159,7 +159,7 @@ def process_package_step(message):
 
 def cancel_subscription(message):
     buttons = ['Нет', 'Да']
-    msg = bot.send_message(chat_id, 'Вы уверены, что хотите отменить подписку?', reply_markup=create_keyboard(words=buttons,width=1))
+    msg = bot.reply_to(message, 'Вы уверены, что хотите отменить подписку?', reply_markup=create_keyboard(words=buttons,width=1))
     bot.register_next_step_handler(msg, process_package_delete_confirmation_step)
 
 def determine_package(message):
@@ -264,20 +264,20 @@ def process_find_price(message):
             else:
                 p = price.split("-")
                 if len(p)==1:
-                    msg = bot.send_message(message.chat_id, 'Введите два числа разделенными тире.')
+                    msg = bot.reply_to(message, 'Введите два числа разделенными тире.')
                     bot.register_next_step_handler(msg, process_find_price)
                     return
                 elif(p[0].isdigit() and p[1].isdigit()):
                     n1 = int(p[0])
                     n2 = int(p[1])
                     if n1>n2:
-                        msg = bot.send_message(message.chat_id, 'Введите цену от меньшего к большему.')
+                        msg = bot.reply_to(message, 'Введите цену от меньшего к большему.')
                         bot.register_next_step_handler(msg, process_find_price)
                         return
                     else:
                         search_filter.price = {"$gte": n1, "$lte": n2}
                 else:
-                    msg = bot.send_message(message.chat_id, 'Введите ценовой диапозон.')
+                    msg = bot.reply_to(message, 'Введите ценовой диапозон.')
                     bot.register_next_step_handler(msg, process_find_price)
                     return
 
@@ -299,23 +299,23 @@ def process_commission_filter_step(message):
             else:
                 c = commission.split("-")
                 if len(c)==1:
-                    msg = bot.send_message(chat_id, 'Введите два числа разделенными тире.')
+                    msg = bot.reply_to(message, 'Введите два числа разделенными тире.')
                     bot.register_next_step_handler(msg, process_commission_filter_step)
                     return
                 elif(c[0].isdigit() and c[1].isdigit()):
                     n1 = int(c[0])
                     n2 = int(c[1])
                     if n1>n2:
-                        msg = bot.send_message(chat_id, 'Введите комиссию от меньшего к большему.')
+                        msg = bot.reply_to(message, 'Введите комиссию от меньшего к большему.')
                         bot.register_next_step_handler(msg, process_commission_filter_step)
                         return
                     else:
                         search_filter.commission = {"$gte": n1, "$lte": n2}
                 else:
-                    msg = bot.send_message(chat_id, 'Введите числовой диапозон.')
+                    msg = bot.reply_to(message, 'Введите числовой диапозон.')
                     bot.register_next_step_handler(msg, process_commission_filter_step)
                     return
-            msg = bot.send_message(chat.id, 'Выберите промежуток времени со дня публикаций.', reply_markup=create_keyboard(words=date_buttons, width=1))
+            msg = bot.send_message(message.chat.id, 'Выберите промежуток времени со дня публикаций.', reply_markup=create_keyboard(words=date_buttons, width=1))
             bot.register_next_step_handler(msg, process_sort_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -466,7 +466,7 @@ def sell_coin(message):
         #     msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
         # else:
             ct = cities+["Назад"]
-            msg = bot.send_message(chat_id, 'Отлично! Сейчас я задам несколько вопросов, касающиеся вашего нового объявления. Ответьте на них пожалуйста. Если все хорошо, я опубликую его. Это позволит другим пользователям найти ваше объявление. Если оно им понравится, то вам позвонят, либо напишут. Поехали!\nСперва, выберите ваш город из списка', reply_markup=create_keyboard(ct,3,True,False))
+            msg = bot.reply_to(message, 'Отлично! Сейчас я задам несколько вопросов, касающиеся вашего нового объявления. Ответьте на них пожалуйста. Если все хорошо, я опубликую его. Это позволит другим пользователям найти ваше объявление. Если оно им понравится, то вам позвонят, либо напишут. Поехали!\nСперва, выберите ваш город из списка', reply_markup=create_keyboard(ct,3,True,False))
             bot.register_next_step_handler(msg, process_city_step)
 
 def my_ads(message):
@@ -568,10 +568,10 @@ def process_city_step(message):
                 itembtn1 = types.KeyboardButton('Нет')
                 itembtn2 = types.KeyboardButton('Отправить контакт',request_contact=True)
                 markup.add(itembtn1, itembtn2)
-                msg = bot.send_message(chat_id, 'Хотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме.', reply_markup=markup)
+                msg = bot.reply_to(message, 'Хотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме.', reply_markup=markup)
                 bot.register_next_step_handler(msg, process_phone_step)
             else:
-                msg = bot.send_message(chat_id, 'Выберите город из списка.')
+                msg = bot.reply_to(message, 'Выберите город из списка.')
                 bot.register_next_step_handler(msg, process_city_step)
                 return
             
@@ -609,7 +609,7 @@ def process_name_step_buy(message):
 
                 bot.register_next_step_handler(msg, process_find_price)
             else:
-                msg = bot.send_message(chat_id, 'Выберите криптовалюту из списка.')
+                msg = bot.reply_to(message, 'Выберите криптовалюту из списка.')
                 bot.register_next_step_handler(msg, process_name_step_buy)
                 return
        
@@ -632,10 +632,10 @@ def process_name_step(message):
                 product = product_dict[chat_id]
                 product.name = name
 
-                msg = bot.send_message(chat_id, 'На сколько долларов вы хотите продать?')
+                msg = bot.reply_to(message, 'На сколько долларов вы хотите продать?')
                 bot.register_next_step_handler(msg, process_price_step)
             else:
-                msg = bot.send_message(chat_id, 'Выберите криптовалюту из списка.')
+                msg = bot.reply_to(message, 'Выберите криптовалюту из списка.')
                 bot.register_next_step_handler(msg, process_name_step)
                 return
 
@@ -647,13 +647,13 @@ def process_price_step(message):
         chat_id = message.chat.id
         price = message.text
         if not price.isdigit():
-            msg = bot.send_message(chat_id, 'Цена должна быть числом.')
+            msg = bot.reply_to(message, 'Цена должна быть числом.')
             bot.register_next_step_handler(msg, process_price_step)
             return
         product = product_dict[chat_id]
         product.price = price
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-        msg = bot.send_message(chat_id, 'Какую комиссию вы берете? От 0 до 100.')
+        msg = bot.reply_to(message, 'Какую комиссию вы берете? От 0 до 100.')
         bot.register_next_step_handler(msg, process_percent_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -664,16 +664,16 @@ def process_percent_step(message):
         percent = message.text
         rng = range(0,101)
         if not percent.isdigit():
-            msg = bot.send_message(chat_id, 'Процент комиссии должен быть числом.')
+            msg = bot.reply_to(message, 'Процент комиссии должен быть числом.')
             bot.register_next_step_handler(msg, process_percent_step)
             return
         if int(percent) not in rng:
-            msg = bot.send_message(chat_id, 'Процент комиссии должен быть между 0 и 100.')
+            msg = bot.reply_to(message, 'Процент комиссии должен быть между 0 и 100.')
             bot.register_next_step_handler(msg, process_percent_step)
             return
         product = product_dict[chat_id]
         product.percent = percent
-        msg = bot.send_message(chat_id, 'По какому курсу?', reply_markup = create_keyboard(exchanges,2,False,False))
+        msg = bot.reply_to(message, 'По какому курсу?', reply_markup = create_keyboard(exchanges,2,False,False))
         bot.register_next_step_handler(msg, process_exchange_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -684,11 +684,11 @@ def process_exchange_step(message):
         exchange = message.text.upper()
         product = product_dict[chat_id]
         if not (exchange in exchanges):
-            msg = bot.send_message(chat_id, 'Выберите биржу из списка.')
+            msg = bot.reply_to(message, 'Выберите биржу из списка.')
             bot.register_next_step_handler(msg, process_exchange_step)
             return
         product.exchange = exchange
-        msg = bot.send_message(chat_id, 'Есть ли у вас комментарии? Если нет, то можете оставить пустым.', reply_markup=create_keyboard(['Нет'],1,False,False))
+        msg = bot.reply_to(message, 'Есть ли у вас комментарии? Если нет, то можете оставить пустым.', reply_markup=create_keyboard(['Нет'],1,False,False))
         bot.register_next_step_handler(msg, process_comment_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -743,11 +743,11 @@ def create_keyboard(words=None, width=None, isOneTime=False, isPhone=False):
 
 @bot.message_handler(commands=['help'])
 def send_welcome(message):
-	bot.send_message(chat_id, "Введите команду /start для начала торговли.")
+	bot.reply_to(message, "Введите команду /start для начала торговли.")
 
 @bot.message_handler(commands=['terms'])
 def command_terms(message):
-    bot.send_message(chat.id,
+    bot.send_message(message.chat.id,
         '''🤔<b>Что это за бот?</b>
 Данный бот помогает связать покупателей и продавцов криптовалюты по всему миру.
 
