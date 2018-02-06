@@ -785,7 +785,7 @@ def command_terms(message):
 
 P.S. Если есть предложения и отзывы о боте, напиши в личку @hancapital''', parse_mode="HTML")
 
-@bot.message_handler(func=lambda mess: mess.text == "Настройки",
+@bot.message_handler(func=lambda mess: mess.text == "Настройки" or mess.text == "Назад к настройкам",
                      content_types=["text"])
 def settings(message):
     bot.send_message(message.chat.id, '''<b>Инструкция по размещению объявлений:</b>
