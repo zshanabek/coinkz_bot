@@ -288,6 +288,7 @@ def process_find_price(message):
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
+@bot.message_handler(content_types=['text'])
 def process_commission_filter_step(message):
     try:
         chat_id = message.chat.id
