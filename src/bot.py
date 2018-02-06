@@ -330,30 +330,34 @@ def process_sort_step(message):
         if sort_type == 'Назад':
             bazaar(message)
         else:
-            if sort_type == '1 день':
-                N = 1
-            elif sort_type == '3 дня':
-                N = 3
-            elif sort_type == 'Неделя':
-                N = 7
-            elif sort_type == 'За все время':
-                N = 50
-            date_N_days_ago = datetime.datetime.now() - datetime.timedelta(days=N)
-            search_filter.sort_type = ({'$gte':date_N_days_ago})
-            filter_params = get_filter_params(chat_id)
-            # bot.send_message(chat_id, str(filter_params))
-            pages = get_pages_num(filter_params)
-            a = skiplimit(5,1,filter_params, chat_id,pages)
-            search_filter.current_page = 1
-            keyboard = types.InlineKeyboardMarkup(row_width = 2)
-            if sell.find(filter_params).count()>5:
-                callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
-                keyboard.add(callback_bt2)
-            if pages != 1:            
-                msg = bot.send_message(chat_id,a, reply_markup=keyboard, parse_mode='HTML')
+            if sort_type == '1 день' or sort_type == '3 дня' or sort_type == 'Неделя' or sort_type =='За все время':
+                if sort_type == '1 день':
+                    N = 1
+                elif sort_type == '3 дня':
+                    N = 3
+                elif sort_type == 'Неделя':
+                    N = 7
+                elif sort_type == 'За все время':
+                    N = 50
+                date_N_days_ago = datetime.datetime.now() - datetime.timedelta(days=N)
+                search_filter.sort_type = ({'$gte':date_N_days_ago})
+                filter_params = get_filter_params(chat_id)
+                # bot.send_message(chat_id, str(filter_params))
+                pages = get_pages_num(filter_params)
+                a = skiplimit(5,1,filter_params, chat_id,pages)
+                search_filter.current_page = 1
+                keyboard = types.InlineKeyboardMarkup(row_width = 2)
+                if sell.find(filter_params).count()>5:
+                    callback_bt2 = types.InlineKeyboardButton(text="Вперед", callback_data="forward")
+                    keyboard.add(callback_bt2)
+                if pages != 1:            
+                    msg = bot.send_message(chat_id,a, reply_markup=keyboard, parse_mode='HTML')
+                else:
+                    msg = bot.send_message(chat_id,a, parse_mode='HTML')                
+                bot.register_next_step_handler(msg, process_sort_step)
             else:
-                msg = bot.send_message(chat_id,a, parse_mode='HTML')                
-            bot.register_next_step_handler(msg, process_sort_step)
+                msg = bot.send_message(message.chat.id, 'Выберите промежуток времени со дня публикаций.', reply_markup=create_keyboard(words=date_buttons, width=1))
+                bot.register_next_step_handler(msg, process_sort_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
