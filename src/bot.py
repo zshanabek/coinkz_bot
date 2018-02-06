@@ -105,6 +105,8 @@ def process_bazaar_step(message):
         my_ads(message)
     elif message.text == 'Главное меню':
         handle_main_menu_btn(message)
+    else:
+        bazaar(message)
     
 
 
