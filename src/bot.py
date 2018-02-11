@@ -89,7 +89,7 @@ def send_welcome(message):
    # elif message.text =='Назад к настройкам':
     #    settings(message)
 
-@bot.message_handler(func=lambda mess: mess.text == "Базар",
+@bot.message_handler(func=lambda mess: mess.text == "Базар" or mess.text == "Назад", 
                      content_types=["text"])
 def bazaar(message):
     msg = bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(bazaar_buttons,1,False,False))
