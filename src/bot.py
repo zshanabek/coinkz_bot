@@ -98,14 +98,14 @@ def bazaar(message):
 @bot.message_handler(func=lambda mess: mess.text == "Обратная связь", 
                      content_types=["text"])
 def obratnaya_sv(message):
-    msg = bot.send_message(message.chat.id, 'Мы ценим мнение каждого из вас и нам очень важно знать о том, чего именно вам не хватает в работе с нашей программой.\n\nЕсли у вас есть предложения по улучшению нашего сервиса, хотите оставить отзыв или нашли ошибки - пишите 👇👇👇', reply_markup=create_keyboard(words=back_btn,width=1))
+    msg = bot.send_message(message.chat.id, 'Мы ценим мнение каждого из вас и нам очень важно знать о том, чего именно вам не хватает в работе с нашей программой.\nЕсли вы хотите видеть еще какие-либо дополнительные функции, просим вас написать об этом 👇👇👇', reply_markup=create_keyboard(words=back_btn,width=1))
     bot.register_next_step_handler(msg, obratnaya_sv2)
     
 def obratnaya_sv2(message):
     if message.text == 'Назад':
         bot.send_message(message.chat.id, 'Что вы хотите сделать?',reply_markup=create_keyboard(words=main_buttons,width=1),parse_mode='markdown')
     else:
-        buttons = ['Нет', 'Да']
+        buttons = ['Нет', 'Да']Ы
         msg = bot.reply_to(message, 'Вы уверены, что хотите отправить?', reply_markup=create_keyboard(words=buttons,width=1))
         bot.register_next_step_handler(msg, confirm_temp)
 
