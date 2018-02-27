@@ -16,6 +16,11 @@ client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.c
 db = client.fuckingtelegrambot
 sell = db.sell
 traders = db.traders
+feedbacks = db.feedbacks
 a=0
-for i in traders.find():
+for i in feedbacks.find():
 	print(i)
+	a+=1
+print(a)
+
+    
