@@ -23,6 +23,7 @@ telebot.logger.setLevel(logging.DEBUG)
 bot = telebot.TeleBot(config.token)
 product_dict = {}
 search_filter_dict = {}
+user_dict = {}
 search_menu = ['Все', 'Назад']
 back_btn = ['Назад']
 client = MongoClient('mongodb://fuckingtelegramuser:fuckfuckfuck@ds059546.mlab.com:59546/fuckingtelegrambot')
@@ -47,6 +48,7 @@ class Product:
         self.city = city
         self.comment = None
         self.contact = None
+        self.text = None
 
 class SearchFilter:
     def __init__(self, city):
@@ -56,6 +58,11 @@ class SearchFilter:
         self.commission = None
         self.sort_type = None
         self.current_page = None
+
+class User:
+    def __init__(self, name):
+        self.name = name
+        self.text = None
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -106,16 +113,22 @@ def obratnaya_sv2(message):
         bot.send_message(message.chat.id, 'Что вы хотите сделать?',reply_markup=create_keyboard(words=main_buttons,width=1),parse_mode='markdown')
     else:
         buttons = ['Нет', 'Да']
+        user_name = str(message.from_user.first_name) 
+        user = User(user_name)
+        user_dict[message.chat.id] = user
+        user = user_dict[message.chat.id]
+        user.text = message.text
         msg = bot.reply_to(message, 'Вы уверены, что хотите отправить?', reply_markup=create_keyboard(words=buttons,width=1))
         bot.register_next_step_handler(msg, confirm_temp)
 
 def confirm_temp(message):
     if message.text == "Да":
         username = message.chat.username
+        user = user_dict[message.chat.id]
         feedbacks.insert_one({
             'username': username,
             "created_at": datetime.datetime.utcnow(),
-            'text': message.text
+            'text': user.text
         })
         bot.send_message(message.chat.id, 'Спасибо вам за обратную связь!',reply_markup=create_keyboard(words=main_buttons,width=1),parse_mode='markdown')
     elif message.text == "Нет":
