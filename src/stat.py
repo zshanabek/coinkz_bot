@@ -17,8 +17,9 @@ db = client.fuckingtelegrambot
 sell = db.sell
 traders = db.traders
 feedbacks = db.feedbacks
+users = db.users
 a=0
-for i in feedbacks.find():
+for i in users.find():
 	print(i)
 	a+=1
 print(a)

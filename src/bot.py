@@ -39,6 +39,7 @@ packages = ['Silver', 'Gold', 'Platinum', 'Узнать свой пакет', '�
 delete_buttons = ['Удалить', 'Мои объявления', 'Главное меню']
 bazaar_buttons = ['Купить', 'Продать', 'Мои объявления', 'Главное меню']
 settings_buttons = ['Пакеты']
+
 class Product:
     def __init__(self, city):
         self.name = None
@@ -75,6 +76,8 @@ def send_welcome(message):
             'is_paid':None,
             "created_at": datetime.datetime.utcnow()
         })
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({'username': message.chat.username,'chat_id':message.chat.id,"created_at": datetime.datetime.utcnow()})
 
 
 #def handle_message(message):
@@ -100,11 +103,23 @@ def send_welcome(message):
 @bot.message_handler(func=lambda mess: mess.text == "Базар" or mess.text == "Назад", 
                      content_types=["text"])
 def bazaar(message):
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
     msg = bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(bazaar_buttons,1,False,False))
     
 @bot.message_handler(func=lambda mess: mess.text == "Обратная связь", 
                      content_types=["text"])
 def obratnaya_sv(message):
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
     msg = bot.send_message(message.chat.id, 'Мы ценим мнение каждого из вас и нам очень важно знать о том, чего именно вам не хватает в работе с нашей программой.\nЕсли вы хотите видеть еще какие-либо дополнительные функции, просим вас написать об этом 👇👇👇\n\nС уважением @hancapital', reply_markup=create_keyboard(words=back_btn,width=1))
     bot.register_next_step_handler(msg, obratnaya_sv2)
     
@@ -137,6 +152,12 @@ def confirm_temp(message):
 @bot.message_handler(func=lambda mess: mess.text == "Купить",
                      content_types=["text"])
 def buy(message):
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
     msg = bot.send_message(message.chat.id, 'Отлично! Сейчас я задам несколько вопросов. Ответы на них будут составлять параметры поиска в моей базе объявлений. Таким образом я найду для вас нужные объявления. Поехали!\n'
     'Для начала выберите город из списка.', reply_markup=create_keyboard(["Все"]+cities+['Назад'],1,False,False))
     bot.register_next_step_handler(msg, choose_city_buy)
@@ -169,6 +190,12 @@ def choose_city_buy(message):
 @bot.message_handler(func=lambda mess: mess.text == "Пакеты",
                      content_types=["text"])
 def list_packages(message):
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
     msg = bot.send_message(message.chat.id, "Выберите пакет.", reply_markup=create_keyboard(words=packages,width=1))
     bot.register_next_step_handler(msg, process_package_step)
 
@@ -485,6 +512,12 @@ def skiplimit(page_size, page_num, filter_params, chat_id, total_pages):
 @bot.message_handler(func=lambda mess: mess.text == "Продать",
                      content_types=["text"])
 def sell_coin(message):
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
     current_username = message.chat.username
     t = traders.find_one({'username':current_username})
 
@@ -510,6 +543,12 @@ def sell_coin(message):
 @bot.message_handler(func=lambda mess: mess.text == "Мои объявления",
                      content_types=["text"])
 def my_ads(message):
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
     chat_id = message.chat.id
     username = message.chat.username
     a = "Ваши объявления\n\n"
@@ -799,6 +838,12 @@ def send_welcome(message):
 @bot.message_handler(func=lambda mess: mess.text == "Инструкции по использованию",
                      content_types=["text"])
 def command_terms(message):
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
     bot.send_message(message.chat.id,
         '''🤔<b>Что это за бот?</b>
 Данный бот помогает связать покупателей и продавцов криптовалюты по всему миру.
@@ -827,6 +872,12 @@ P.S. Если есть предложения и отзывы о боте, на�
 @bot.message_handler(func=lambda mess: mess.text == "Настройки" or mess.text == "Назад к настройкам",
                      content_types=["text"])
 def settings(message):
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
     bot.send_message(message.chat.id, '''<b>Инструкция по размещению объявлений:</b>
 При использовании данного бота каждую неделю вы получаете право подать 3 бесплатных объявления. По истечению лимита в 3 объявления в неделю, вам необходимо приобрести один из платных пакетов.
 
@@ -848,7 +899,13 @@ P.S Если есть предложения и отзывы о боте,нап�
 @bot.message_handler(func=lambda mess: mess.text == "Главное меню",
                      content_types=["text"])
 def handle_main_menu_btn(message):
-	bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(words=main_buttons,width=1))
+    if users.find({ 'chat_id': message.chat.id}).count()<1:
+        users.insert_one({
+            'username': message.chat.username,
+            'chat_id':message.chat.id,
+            "created_at": datetime.datetime.utcnow()
+        })
+    bot.send_message(message.chat.id, 'Что вы хотите сделать?', reply_markup=create_keyboard(words=main_buttons,width=1))
 
 def iequal(a, b):
     try:
@@ -860,4 +917,5 @@ if __name__ == '__main__':
     sell = db.sell
     traders = db.traders
     feedbacks = db.feedbacks
+    users = db.users
     bot.polling(none_stop=True)
