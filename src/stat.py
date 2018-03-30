@@ -18,8 +18,9 @@ sell = db.sell
 traders = db.traders
 feedbacks = db.feedbacks
 users = db.users
+sell_new = db.sell_new
 a=0
-for i in users.find():
+for i in sell_new.find():
 	print(i)
 	a+=1
 print(a)

@@ -44,25 +44,27 @@ bazaar_buttons = ['Купить', 'Продать', 'Мои объявления
 settings_buttons = ['Пакеты']
 
 class Product:
-    def __init__(self, city):
+    def __init__(self, country):
+        self.country = country
         self.name = None
         self.exchange = None
         self.price = None
         self.percent = None
-        self.city = city
+        self.city = None
         self.comment = None
         self.contact = None
         self.text = None
 
 class SearchFilter:
     def __init__(self, country):
+    	self.current_page = None
+    	self.price = None
+    	self.sort_type = None
     	self.country = country
-        self.city = None
-        self.currency = None
-        self.price = None
-        self.commission = None
-        self.sort_type = None
-        self.current_page = None
+    	self.city = None
+    	self.currency = None
+    	self.commission = None
+
 
 class User:
     def __init__(self, name):
@@ -71,7 +73,7 @@ class User:
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    welcome_msg = "Здравствуйтее, *{0}*. Что вы хотите сделать?".format(message.chat.first_name)
+    welcome_msg = "Здравствуйте, *{0}*. Что вы хотите сделать?".format(message.chat.first_name)
     bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(words=main_buttons,width=1),parse_mode='markdown')
     username = message.chat.username
     if traders.find({ 'username': username}).count()<1:
@@ -163,7 +165,7 @@ def buy(message):
             "created_at": datetime.datetime.utcnow()
         })
     msg = bot.send_message(message.chat.id, 'Отлично! Сейчас я задам несколько вопросов. Ответы на них будут составлять параметры поиска в моей базе объявлений. Таким образом я найду для вас нужные объявления. Поехали!\n'
-    'Для начала выберите страну из списка.', reply_markup=countries+['Назад'],1,False,False))
+    'Для начала выберите страну из списка.', reply_markup=create_keyboard(countries+['Назад'],1,False,False))
     bot.register_next_step_handler(msg, choose_country_buy)
 
 def choose_country_buy(message):
@@ -447,7 +449,7 @@ def process_sort_step(message):
                 elif sort_type == 'Неделя':
                     N = 7
                 elif sort_type == 'За все время':
-                    N = 50
+                    N = 100000
                 date_N_days_ago = datetime.datetime.now() - datetime.timedelta(days=N)
                 search_filter.sort_type = ({'$gte':date_N_days_ago})
                 filter_params = get_filter_params(chat_id)
@@ -525,6 +527,7 @@ def get_filter_params(chat_id):
     filter_params["price"]=search_filter.price
     filter_params["percent"]=search_filter.commission
     filter_params["created_at"] = search_filter.sort_type
+    filter_params["country"] = search_filter.country
     if search_filter.city != "Все":
         filter_params["city"]=search_filter.city
     if search_filter.currency != "Все":
@@ -588,9 +591,9 @@ def sell_coin(message):
         # elif (sell.find({'username':current_username}).count()==50 and t['is_paid']==3):
         #     msg = bot.send_message(message.chat.id, "Вы достигли лимит объявлений (50 объявлений)")
         # else:
-            ct = cities+["Назад"]
-            msg = bot.send_message(message.chat.id, 'Отлично! Сейчас я задам несколько вопросов, касающиеся вашего нового объявления. Ответьте на них пожалуйста. Если все хорошо, я опубликую его. Это позволит другим пользователям найти ваше объявление. Если оно им понравится, то вам позвонят, либо напишут. Поехали!\nСперва, выберите ваш город из списка', reply_markup=create_keyboard(ct,3,True,False))
-            bot.register_next_step_handler(msg, process_city_step)
+            ct = countries+["Назад"]
+            msg = bot.send_message(message.chat.id, 'Отлично! Сейчас я задам несколько вопросов, касающиеся вашего нового объявления. Ответьте на них пожалуйста. Если все хорошо, я опубликую его. Это позволит другим пользователям найти ваше объявление. Если оно им понравится, то вам позвонят, либо напишут. Поехали!\nСперва, выберите вашу страну из списка', reply_markup=create_keyboard(ct,3,True,False))
+            bot.register_next_step_handler(msg, process_country_step)
 
 @bot.message_handler(func=lambda mess: mess.text == "Мои объявления",
                      content_types=["text"])
@@ -676,6 +679,31 @@ def process_remove_step(message):
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
+def process_country_step(message):
+    try:
+        chat_id = message.chat.id
+        country = message.text
+        if message.text == 'Назад':
+            bazaar(message)
+        elif iequal(country, 'Казахстан'):
+            product = Product(country)
+            product_dict[chat_id] = product
+            msg = bot.send_message(message.chat.id, 'Выберите город из списка.', reply_markup=create_keyboard(cities,3,True,False))
+            bot.register_next_step_handler(msg, process_city_step)
+        elif iequal(country, 'Россия'):
+            product = Product(country)
+            product_dict[chat_id] = product
+            msg = bot.send_message(message.chat.id, 'Выберите город из списка.', reply_markup=create_keyboard(rus_cities,3,True,False))
+            bot.register_next_step_handler(msg, process_city_step2)
+        else:
+            msg = bot.reply_to(message, 'Выберите город из списка.')
+            bot.register_next_step_handler(msg, process_country_step)
+            return
+            
+    except Exception as e:
+        msg = bot.reply_to(message, 'Выберите город из списка.')
+        bot.register_next_step_handler(msg, process_city_step)
+
 def process_city_step(message):
     try:
         chat_id = message.chat.id
@@ -688,10 +716,7 @@ def process_city_step(message):
                 if iequal(city, i):
                     count+=1
             if count == 1:
-                product = Product(city)
-
-                product_dict[chat_id] = product
-
+                product = product_dict[chat_id]
                 product.city = city
                 markup = types.ReplyKeyboardMarkup(row_width=1)
                 itembtn1 = types.KeyboardButton('Нет')
@@ -707,6 +732,36 @@ def process_city_step(message):
     except Exception as e:
         msg = bot.reply_to(message, 'Выберите город из списка.')
         bot.register_next_step_handler(msg, process_city_step)
+
+def process_city_step2(message):
+    try:
+        chat_id = message.chat.id
+        city = message.text.capitalize()
+        if message.text == 'Назад':
+            bazaar(message)
+        else:
+            count = 0
+            for i in rus_cities:
+                if iequal(city, i):
+                    count+=1
+            if count == 1:
+                product = product_dict[chat_id]
+                product.city = city
+                markup = types.ReplyKeyboardMarkup(row_width=1)
+                itembtn1 = types.KeyboardButton('Нет')
+                itembtn2 = types.KeyboardButton('Отправить контакт',request_contact=True)
+                markup.add(itembtn1, itembtn2)
+                msg = bot.reply_to(message, 'Хотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме.', reply_markup=markup)
+                bot.register_next_step_handler(msg, process_phone_step)
+            else:
+                msg = bot.reply_to(message, 'Выберите город из списка.')
+                bot.register_next_step_handler(msg, process_city_step)
+                return
+            
+    except Exception as e:
+        msg = bot.reply_to(message, 'Выберите город из списка.')
+        bot.register_next_step_handler(msg, process_city_step)
+
 
 def process_phone_step(message):
     try:
@@ -839,7 +894,7 @@ def process_comment_step(message):
         else:
             product.comment = comment
         buttons = ['Нет', 'Да']
-        a = 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: '+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
+        a = 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange + '\nСтрана: ' + product.country +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: '+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
         msg = bot.send_message(chat_id, a, reply_markup=create_keyboard(buttons,2,False,False),parse_mode='HTML')
         bot.register_next_step_handler(msg, process_confirmation_step)
     except Exception as e:
@@ -858,19 +913,20 @@ def process_confirmation_step(message):
                 'price': int(product.price),
                 'percent': int(product.percent),
                 'exchange': product.exchange,
+                'country': product.country,
                 'city': product.city,
                 'username': username,
                 'comment': product.comment,
                 'phone_number': product.contact,
                 "created_at": datetime.datetime.utcnow()
             })
-            a = 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: '+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
+            a = 'Вы успешно опубликовали!\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange + '\nСтрана: ' + product.country +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: '+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
             bot.send_message(chat_id, a, reply_markup = create_keyboard(main_buttons,1,False,False), parse_mode='HTML')
         else:
             bot.send_message(chat_id, 'Вы отменили объявление о продаже.', reply_markup=create_keyboard(main_buttons,1,False,False))
     except Exception as e:
         buttons = ['Нет', 'Да']
-        a = 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: '+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
+        a = 'Подтвердите объявление о продаже\n\nВалюта: ' + product.name + '\nСумма покупки: ' + '$'+str(product.price) + '\nПроцент: ' + product.percent+'%' + '\nКурс: '+ product.exchange + '\nСтрана: ' + product.country +'\nГород: ' + product.city+'\nUsername: @'+username+'\nТелефон: '+product.contact+'\nКомментарий: <i>'+product.comment+'</i>'
         msg = bot.send_message(chat_id, a, reply_markup=create_keyboard(buttons,2,False,False),parse_mode='HTML')
         bot.register_next_step_handler(msg, process_confirmation_step)
 
@@ -966,7 +1022,7 @@ def iequal(a, b):
         return a == b
 if __name__ == '__main__':
     db = client.fuckingtelegrambot
-    sell = db.sell
+    sell = db.sell_new
     traders = db.traders
     feedbacks = db.feedbacks
     users = db.users
