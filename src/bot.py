@@ -32,6 +32,9 @@ coin_names = ['Bitcoin', 'Ethereum', 'Litecoin', 'NEO', 'NEM', 'Stratis', 'BitSh
 
 cities = ['Алматы','Астана','Шымкент','Караганда','Актобе','Тараз','Павлодар','Семей','Усть-Каменогорск','Уральск','Костанай','Петропавловск','Кызылорда','Атырау','Актау','Талдыкорган']
 
+rus_cities = ['Москва','Санкт-Петербург','Новосибирск','Екатеринбург','Нижний Новгород','Казань','Челябинск','Омск','Самара','Ростов-на-Дону','Уфа','Красноярск','Пермь','Воронеж','Другое']
+
+countries = ['Казахстан','Россия']
 exchanges =['COINMARKETCAP', 'BLOCKCHAIN', 'CEX.IO', 'ALONIX', 'BITTREX', 'EXMO.ME', 'BITFINEX', 'POLONIEX']
 
 main_buttons = ['Базар', 'Настройки', 'Инструкции по использованию', 'Обратная связь']
@@ -52,8 +55,9 @@ class Product:
         self.text = None
 
 class SearchFilter:
-    def __init__(self, city):
-        self.city = city
+    def __init__(self, country):
+    	self.country = country
+        self.city = None
         self.currency = None
         self.price = None
         self.commission = None
@@ -67,7 +71,7 @@ class User:
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    welcome_msg = "Здравствуйте, *{0}*. Что вы хотите сделать?".format(message.chat.first_name)
+    welcome_msg = "Здравствуйтее, *{0}*. Что вы хотите сделать?".format(message.chat.first_name)
     bot.send_message(message.chat.id, welcome_msg,reply_markup=create_keyboard(words=main_buttons,width=1),parse_mode='markdown')
     username = message.chat.username
     if traders.find({ 'username': username}).count()<1:
@@ -159,8 +163,33 @@ def buy(message):
             "created_at": datetime.datetime.utcnow()
         })
     msg = bot.send_message(message.chat.id, 'Отлично! Сейчас я задам несколько вопросов. Ответы на них будут составлять параметры поиска в моей базе объявлений. Таким образом я найду для вас нужные объявления. Поехали!\n'
-    'Для начала выберите город из списка.', reply_markup=create_keyboard(["Все"]+cities+['Назад'],1,False,False))
-    bot.register_next_step_handler(msg, choose_city_buy)
+    'Для начала выберите страну из списка.', reply_markup=countries+['Назад'],1,False,False))
+    bot.register_next_step_handler(msg, choose_country_buy)
+
+def choose_country_buy(message):
+    try:
+        chat_id = message.chat.id
+        country = message.text
+        if message.text == 'Назад':
+            bazaar(message)
+        elif iequal(country, 'Казахстан'):
+            search_filter = SearchFilter(country)
+            search_filter_dict[chat_id] = search_filter
+            msg = bot.reply_to(message, 'Выберите город из списка.', reply_markup=create_keyboard(["Все"]+cities,1,False,False))
+            bot.register_next_step_handler(msg, choose_city_buy)
+        elif iequal(country, 'Россия'):
+            search_filter = SearchFilter(country)
+            search_filter_dict[chat_id] = search_filter
+            msg = bot.reply_to(message, 'Выберите город из списка.', reply_markup=create_keyboard(["Все"]+rus_cities,1,False,False))
+            bot.register_next_step_handler(msg, choose_city_buy_rus) 
+        else:
+            msg = bot.reply_to(message, 'Выберите страну из списка.')
+            bot.register_next_step_handler(msg, choose_country_buy)
+            return
+            
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
+
 
 def choose_city_buy(message):
     try:
@@ -174,14 +203,37 @@ def choose_city_buy(message):
                 if iequal(city, i):
                     count+=1
             if count==1:
-                search_filter = SearchFilter(city)
-                search_filter_dict[chat_id] = search_filter
+                search_filter = search_filter_dict[chat_id]
                 search_filter.city = city
                 msg = bot.reply_to(message, 'Выберите криптовалюту из списка.', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
                 bot.register_next_step_handler(msg, process_name_step_buy)
             else:
                 msg = bot.reply_to(message, 'Выберите город из списка.')
                 bot.register_next_step_handler(msg, choose_city_buy)
+                return
+            
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
+
+def choose_city_buy_rus(message):
+    try:
+        chat_id = message.chat.id
+        city = message.text
+        if message.text == 'Назад':
+            bazaar(message)
+        else:
+            count = 0
+            for i in rus_cities+['Все']:
+                if iequal(city, i):
+                    count+=1
+            if count==1:
+                search_filter = search_filter_dict[chat_id]
+                search_filter.city = city
+                msg = bot.reply_to(message, 'Выберите криптовалюту из списка.', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
+                bot.register_next_step_handler(msg, process_name_step_buy)
+            else:
+                msg = bot.reply_to(message, 'Выберите город из списка.')
+                bot.register_next_step_handler(msg, choose_city_buy_rus)
                 return
             
     except Exception as e:
