@@ -177,12 +177,12 @@ def choose_country_buy(message):
         elif iequal(country, 'Казахстан'):
             search_filter = SearchFilter(country)
             search_filter_dict[chat_id] = search_filter
-            msg = bot.reply_to(message, 'Выберите город из списка.', reply_markup=create_keyboard(["Все"]+cities,1,False,False))
+            msg = bot.reply_to(message, 'Выберите город из списка.', reply_markup=create_keyboard(["Все"]+cities,1,True,False))
             bot.register_next_step_handler(msg, choose_city_buy)
         elif iequal(country, 'Россия'):
             search_filter = SearchFilter(country)
             search_filter_dict[chat_id] = search_filter
-            msg = bot.reply_to(message, 'Выберите город из списка.', reply_markup=create_keyboard(["Все"]+rus_cities,1,False,False))
+            msg = bot.reply_to(message, 'Выберите город из списка.', reply_markup=create_keyboard(["Все"]+rus_cities,1,True,False))
             bot.register_next_step_handler(msg, choose_city_buy_rus) 
         else:
             msg = bot.reply_to(message, 'Выберите страну из списка.')
@@ -199,6 +199,9 @@ def choose_city_buy(message):
         city = message.text
         if message.text == 'Назад':
             bazaar(message)
+        elif city == 'Другое':
+        	msg = bot.reply_to(message, 'Введите название города.')
+        	bot.register_next_step_handler(msg, process_enter_city)
         else:
             count = 0
             for i in cities+['Все']:
@@ -217,12 +220,26 @@ def choose_city_buy(message):
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
+def process_enter_city(message):
+	try:
+		chat_id = message.chat.id
+		city = message.text
+		search_filter = search_filter_dict[chat_id]
+		search_filter.city = city
+		msg = bot.reply_to(message, 'Выберите криптовалюту из списка.', reply_markup=create_keyboard(["Все"]+coin_names,1,False,False))
+		bot.register_next_step_handler(msg, process_name_step_buy)
+	except Exception as e:
+		bot.reply_to(message, 'oooops')
+
 def choose_city_buy_rus(message):
     try:
         chat_id = message.chat.id
         city = message.text
         if message.text == 'Назад':
             bazaar(message)
+        elif city == 'Другое':
+        	msg = bot.reply_to(message, 'Введите название города.')
+        	bot.register_next_step_handler(msg, process_enter_city)
         else:
             count = 0
             for i in rus_cities+['Все']:
@@ -710,6 +727,9 @@ def process_city_step(message):
         city = message.text.capitalize()
         if message.text == 'Назад':
             bazaar(message)
+        elif city == 'Другое':
+        	msg = bot.reply_to(message, 'Введите название города.')
+        	bot.register_next_step_handler(msg, process_enter_city2)
         else:
             count = 0
             for i in cities:
@@ -733,12 +753,30 @@ def process_city_step(message):
         msg = bot.reply_to(message, 'Выберите город из списка.')
         bot.register_next_step_handler(msg, process_city_step)
 
+def process_enter_city2(message):
+	try:
+		chat_id = message.chat.id
+		city = message.text
+		product = product_dict[chat_id]
+		product.city = city
+		markup = types.ReplyKeyboardMarkup(row_width=1)
+		itembtn1 = types.KeyboardButton('Нет')
+		itembtn2 = types.KeyboardButton('Отправить контакт',request_contact=True)
+		markup.add(itembtn1, itembtn2)
+		msg = bot.reply_to(message, 'Хотите поделиться своим телефонным номером? Если нет, то с вами свяжутся через ваш username в Телеграме.', reply_markup=markup)
+		bot.register_next_step_handler(msg, process_phone_step)
+	except Exception as e:
+		bot.reply_to(message, 'oooops')
+
 def process_city_step2(message):
     try:
         chat_id = message.chat.id
         city = message.text.capitalize()
         if message.text == 'Назад':
             bazaar(message)
+        elif city == 'Другое':
+        	msg = bot.reply_to(message, 'Введите название города.')
+        	bot.register_next_step_handler(msg, process_enter_city2)
         else:
             count = 0
             for i in rus_cities:
